@@ -1,1 +1,9 @@
+# Javascript
+node_modules
+/build
+
+# Python scripts ignore if needed
+*.pyc
+
+# Custom ignores
 /data

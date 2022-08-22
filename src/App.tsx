@@ -1,0 +1,9 @@
+import * as React from 'react';
+
+export default function App(): JSX.Element {
+  return (
+    <div>
+      The app!
+    </div>
+  );
+}
