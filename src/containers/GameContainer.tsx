@@ -16,7 +16,6 @@ export default function GameContainer(): JSX.Element {
       sx={{
         width: '100vw',
         height: '100vh',
-        overflow: 'hidden',
       }}
     >
       <GameMap cities={cities} onReady={handleMapReady} />

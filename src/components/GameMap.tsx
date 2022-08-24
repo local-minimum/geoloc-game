@@ -8,35 +8,32 @@ import 'ol/ol.css';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Feature } from 'ol';
-import { Point } from 'ol/geom';
+import { LineString, Point } from 'ol/geom';
 import {
-  Circle, Fill, Stroke, Style,
+  Fill, Stroke, Style,
 } from 'ol/style';
+import { fromLonLat } from 'ol/proj';
+import CircleStyle from 'ol/style/Circle';
 import { City } from '../hooks/useCities';
+import usePrevious from '../hooks/usePrevious';
 
-const fill = new Fill({
-  color: 'rgba(255,255,255,0.4)',
-});
-const stroke = new Stroke({
-  color: '#3399CC',
-  width: 1.25,
-});
-const styles = [
-  new Style({
-    image: new Circle({
-      fill,
-      stroke,
-      radius: 100,
+const style = new Style({
+  image: new CircleStyle({
+    radius: 10,
+    fill: new Fill({ color: 'black' }),
+    stroke: new Stroke({
+      color: [255, 0, 0],
+      width: 2,
     }),
-    fill,
-    stroke,
   }),
-];
+});
 
 interface GameMapProps {
   cities?: City[];
   onReady: () => void;
 }
+
+const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
 
 export default function GameMap({
   cities = [], onReady,
@@ -46,23 +43,38 @@ export default function GameMap({
   const citiesSource = React.useRef<VectorSource | null>(null);
   const mapRef = React.useRef<Map | null>();
   const mapElement = React.useRef<HTMLDivElement | null>();
+  const prevMap = usePrevious(mapRef.current);
+  const mapReady = mapRef.current !== prevMap;
+
+  React.useEffect(() => {
+    if (mapReady) onReady();
+  }, [mapReady, onReady]);
 
   React.useEffect(() => {
     if (citiesSource.current === null) return;
-
-    citiesSource.current.clear();
-    citiesSource.current.addFeatures(cities.map(({ name, coordinates }) => new Feature({
-      name,
-      geometry: new Point(coordinates),
-    })));
-    mapRef.current?.render();
-  }, [cities]);
+    const features = cities.map(({ name, coordinates }) => {
+      const mapCoords = fromLonLat(coordinates, MAP_PROJ);
+      return new Feature({
+        name,
+        geometry: new Point(mapCoords),
+      });
+    });
+    citiesSource.current.addFeatures(features);
+    citiesSource.current.addFeature(
+      new Feature({
+        name: 'hello',
+        geometry: new LineString(cities.map(({ coordinates }) => coordinates)),
+      }),
+    );
+    // Just for testing zoom to somewhere
+    const view = mapRef.current?.getView();
+    const focus = features[0]?.getGeometry()?.getCoordinates();
+    if (focus !== undefined) view?.fit(focus, { minResolution: 12, maxZoom: 12 });
+    // End test
+  }, [cities, mapReady]);
 
   React.useEffect(() => {
-    const citiesVectorSource = new VectorSource({
-      features: [],
-    });
-
+    const citiesVectorSource = new VectorSource();
     mapRef.current = new Map({
       target: mapElement.current ?? undefined,
       layers: [
@@ -70,25 +82,34 @@ export default function GameMap({
           source: new XYZ({
             url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           }),
+          zIndex: 1,
+          visible: true,
         }),
         new VectorLayer({
           source: citiesVectorSource,
-          style: styles,
           visible: true,
+          zIndex: 100,
+          opacity: 50,
+          style: function styleFeature(feature) {
+            return style;
+          },
         }),
       ],
-      view: new View({ center: [0, 0], zoom: 2 }),
+      view: new View({
+        center: [0, 0],
+        zoom: 2,
+        projection: MAP_PROJ,
+      }),
     });
-    mapRef.current.on('loadend', onReady);
     citiesSource.current = citiesVectorSource;
     causeRefresh(null);
-  }, [onReady]);
+  }, []);
 
   return (
     <Box
       ref={mapElement}
       component="div"
-      sx={{ height: '100%', width: '100%', overflow: 'hidden' }}
+      sx={{ height: '100%', width: '100%' }}
       className="map-container"
     />
   );
