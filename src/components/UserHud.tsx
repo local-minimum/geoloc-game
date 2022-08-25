@@ -1,10 +1,14 @@
 import { Autocomplete, Paper, TextField } from '@mui/material';
+import { Stack } from '@mui/system';
+import { last } from 'lodash';
 import * as React from 'react';
+import { CityWithTargetInfo } from '../ExtendedCity';
 import { City } from '../hooks/useCities';
 
 interface UserHudProps {
   cities: City[],
-  guesses: City[],
+  guesses: CityWithTargetInfo[],
+  target: City | undefined,
   onGuessCity: (guess: City) => void,
 }
 
@@ -16,9 +20,10 @@ function guessName(city: City): string {
 }
 
 export default function UserHud({
-  cities, onGuessCity, guesses,
+  cities, onGuessCity, guesses, target,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
+  const guess = last(guesses);
   return (
     <Paper
       elevation={2}
@@ -30,33 +35,39 @@ export default function UserHud({
         padding: 2,
       }}
     >
-      <Autocomplete
-        size="small"
-        inputValue={inputValue}
-        disablePortal
-        options={cities}
-        clearOnBlur
-        clearOnEscape
-        getOptionDisabled={
-          (option: City) => guesses.some((guess) => guessName(guess) === guessName(option))
-        }
-        onChange={(_, city) => city !== null && onGuessCity(city)}
-        onInputChange={(_, value, reason) => {
-          switch (reason) {
-            case 'input':
-              setInputValue(value);
-              break;
-            case 'clear':
-            case 'reset':
-              setInputValue('');
-              break;
+      <Stack direction="row">
+        <Autocomplete
+          disabled={target === undefined}
+          size="small"
+          inputValue={inputValue}
+          disablePortal
+          options={cities}
+          clearOnBlur
+          clearOnEscape
+          getOptionDisabled={
+            (option: City) => guesses.some((g) => guessName(g) === guessName(option))
           }
-        }}
-        getOptionLabel={(option: City) => guessName(option)}
-        sx={{ width: 'min(400px, 80%)' }}
-        // eslint-disable-next-line react/jsx-props-no-spreading
-        renderInput={(params) => <TextField {...params} label="City" />}
-      />
+          onChange={(_, city) => city !== null && onGuessCity(city)}
+          onInputChange={(_, value, reason) => {
+            switch (reason) {
+              case 'input':
+                setInputValue(value);
+                break;
+              case 'clear':
+              case 'reset':
+                setInputValue('');
+                break;
+            }
+          }}
+          getOptionLabel={(option: City) => guessName(option)}
+          sx={{ width: 'min(400px, 80%)' }}
+          // eslint-disable-next-line react/jsx-props-no-spreading
+          renderInput={(params) => <TextField {...params} label="City" />}
+        />
+        {guess && (
+          guess.isSame ? 'Found it!' : `Distance: ${guess.distance.toFixed()}`
+        )}
+      </Stack>
     </Paper>
   );
 }

@@ -1,8 +1,11 @@
+import { sample } from 'lodash';
 import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
 import UserHud from '../components/UserHud';
 import useCities, { City } from '../hooks/useCities';
+import { CityWithTargetInfo } from '../ExtendedCity';
+import { getDistance } from '../utils/geo';
 
 export default function GameContainer(): JSX.Element {
   const [mapLoaded, setMapLoaded] = React.useState(false);
@@ -11,10 +14,21 @@ export default function GameContainer(): JSX.Element {
   }, [mapLoaded]);
 
   const cities = useCities();
-  const [guesses, setGuesses] = React.useState<City[]>([]);
+  const target = React.useMemo(() => sample(cities), [cities]);
+  const [guesses, setGuesses] = React.useState<CityWithTargetInfo[]>([]);
   const handleAddGuess = React.useCallback((city: City) => {
-    setGuesses([...guesses, city]);
-  }, [guesses]);
+    if (target === undefined) return;
+    const sameCountry = city.country === target?.country;
+    const sameRegion = sameCountry && city.region === target?.region;
+    const guess: CityWithTargetInfo = {
+      ...city,
+      sameCountry,
+      sameRegion,
+      isSame: sameRegion && city.name === target?.name,
+      distance: getDistance(city, target),
+    };
+    setGuesses([...guesses, guess]);
+  }, [guesses, target]);
 
   return (
     <Box
@@ -24,7 +38,7 @@ export default function GameContainer(): JSX.Element {
       }}
     >
       <GameMap cities={guesses} onReady={handleMapReady} />
-      <UserHud cities={cities} onGuessCity={handleAddGuess} guesses={guesses} />
+      <UserHud cities={cities} onGuessCity={handleAddGuess} guesses={guesses} target={target} />
     </Box>
   );
 }
