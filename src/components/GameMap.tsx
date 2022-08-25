@@ -7,8 +7,9 @@ import View from 'ol/View';
 import 'ol/ol.css';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+
 import { Feature } from 'ol';
-import { LineString, Point } from 'ol/geom';
+import { Point } from 'ol/geom';
 import {
   Fill, Stroke, Style,
 } from 'ol/style';
@@ -17,12 +18,21 @@ import CircleStyle from 'ol/style/Circle';
 import { City } from '../hooks/useCities';
 import usePrevious from '../hooks/usePrevious';
 
-const style = new Style({
+/*
+438db6
+c2ddd0
+d8ecde
+ec957d
+e77158
+c3c3a8
+*/
+
+const cityStyle = new Style({
   image: new CircleStyle({
-    radius: 10,
-    fill: new Fill({ color: 'black' }),
+    radius: 4,
+    fill: new Fill({ color: '#ec957d' }),
     stroke: new Stroke({
-      color: [255, 0, 0],
+      color: '#e77158',
       width: 2,
     }),
   }),
@@ -41,8 +51,8 @@ export default function GameMap({
   const [, causeRefresh] = React.useState<null | undefined>();
 
   const citiesSource = React.useRef<VectorSource | null>(null);
-  const mapRef = React.useRef<Map | null>();
-  const mapElement = React.useRef<HTMLDivElement | null>();
+  const mapRef = React.useRef<Map | null>(null);
+  const mapElement = React.useRef<HTMLDivElement | null>(null);
   const prevMap = usePrevious(mapRef.current);
   const mapReady = mapRef.current !== prevMap;
 
@@ -52,6 +62,7 @@ export default function GameMap({
 
   React.useEffect(() => {
     if (citiesSource.current === null) return;
+
     const features = cities.map(({ name, coordinates }) => {
       const mapCoords = fromLonLat(coordinates, MAP_PROJ);
       return new Feature({
@@ -60,20 +71,12 @@ export default function GameMap({
       });
     });
     citiesSource.current.addFeatures(features);
-    citiesSource.current.addFeature(
-      new Feature({
-        name: 'hello',
-        geometry: new LineString(cities.map(({ coordinates }) => coordinates)),
-      }),
-    );
-    // Just for testing zoom to somewhere
-    const view = mapRef.current?.getView();
-    const focus = features[0]?.getGeometry()?.getCoordinates();
-    if (focus !== undefined) view?.fit(focus, { minResolution: 12, maxZoom: 12 });
-    // End test
   }, [cities, mapReady]);
 
   React.useEffect(() => {
+    if (mapRef.current !== null) {
+      return;
+    }
     const citiesVectorSource = new VectorSource();
     mapRef.current = new Map({
       target: mapElement.current ?? undefined,
@@ -89,15 +92,14 @@ export default function GameMap({
           source: citiesVectorSource,
           visible: true,
           zIndex: 100,
-          opacity: 50,
           style: function styleFeature(feature) {
-            return style;
+            return cityStyle;
           },
         }),
       ],
       view: new View({
         center: [0, 0],
-        zoom: 2,
+        zoom: 5,
         projection: MAP_PROJ,
       }),
     });
