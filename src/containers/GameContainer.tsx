@@ -5,7 +5,7 @@ import GameMap from '../components/GameMap';
 import UserHud from '../components/UserHud';
 import useCities, { City } from '../hooks/useCities';
 import { CityWithTargetInfo } from '../ExtendedCity';
-import { getDistance } from '../utils/geo';
+import { getMapDistance } from '../utils/geo';
 
 export default function GameContainer(): JSX.Element {
   const [mapLoaded, setMapLoaded] = React.useState(false);
@@ -25,7 +25,7 @@ export default function GameContainer(): JSX.Element {
       sameCountry,
       sameRegion,
       isSame: sameRegion && city.name === target?.name,
-      distance: getDistance(city, target),
+      distance: getMapDistance(city, target),
     };
     setGuesses([...guesses, guess]);
   }, [guesses, target]);
