@@ -1,7 +1,8 @@
 import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
-import useCities from '../hooks/useCities';
+import UserHud from '../components/UserHud';
+import useCities, { City } from '../hooks/useCities';
 
 export default function GameContainer(): JSX.Element {
   const [mapLoaded, setMapLoaded] = React.useState(false);
@@ -9,7 +10,11 @@ export default function GameContainer(): JSX.Element {
     if (!mapLoaded) setMapLoaded(true);
   }, [mapLoaded]);
 
-  const cities = useCities({ disabled: !mapLoaded, randomPopulate: true });
+  const cities = useCities();
+  const [guesses, setGuesses] = React.useState<City[]>([]);
+  const handleAddGuess = React.useCallback((city: City) => {
+    setGuesses([...guesses, city]);
+  }, [guesses]);
 
   return (
     <Box
@@ -18,7 +23,8 @@ export default function GameContainer(): JSX.Element {
         height: '100vh',
       }}
     >
-      <GameMap cities={cities} onReady={handleMapReady} />
+      <GameMap cities={guesses} onReady={handleMapReady} />
+      <UserHud cities={cities} onGuessCity={handleAddGuess} guesses={guesses} />
     </Box>
   );
 }
