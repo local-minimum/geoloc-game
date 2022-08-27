@@ -69,7 +69,6 @@ enum MapFeatureTypes {
 export default function GameMap({
   cities = [], onReady, showMap = false, target,
 }: GameMapProps): JSX.Element {
-  console.log(target);
   const [, causeRefresh] = React.useState<null | undefined>();
 
   const citiesSource = React.useRef<VectorSource | null>(null);
@@ -98,7 +97,7 @@ export default function GameMap({
     });
     citiesSource.current.addFeatures(cityFeatures);
 
-    const withinFeatures = cities.slice(cities.length - 2).map((city) => {
+    const withinFeatures = cities.slice(cities.length - 1).map((city) => {
       const { coordinates } = city;
       const mapCoords = fromLonLat(coordinates, MAP_PROJ);
       return new Feature({

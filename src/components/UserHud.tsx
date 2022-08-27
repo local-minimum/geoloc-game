@@ -65,7 +65,7 @@ export default function UserHud({
           renderInput={(params) => <TextField {...params} label="City" autoFocus />}
         />
         {guess && (
-          guess.isSame ? 'Found it!' : `Most Recent: ${guess.name}`
+          guess.isSame ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
         )}
       </Stack>
     </Paper>
