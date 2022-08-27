@@ -62,10 +62,10 @@ export default function UserHud({
           getOptionLabel={(option: City) => guessName(option)}
           sx={{ width: 'min(400px, 80%)' }}
           // eslint-disable-next-line react/jsx-props-no-spreading
-          renderInput={(params) => <TextField {...params} label="City" />}
+          renderInput={(params) => <TextField {...params} label="City" autoFocus />}
         />
         {guess && (
-          guess.isSame ? 'Found it!' : `Distance: ${guess.distance.toFixed()}`
+          guess.isSame ? 'Found it!' : `Most Recent: ${guess.name}`
         )}
       </Stack>
     </Paper>
