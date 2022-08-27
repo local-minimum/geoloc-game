@@ -78,6 +78,7 @@ export default function GameMap({
   const [, causeRefresh] = React.useState<null | undefined>();
 
   const citiesSource = React.useRef<VectorSource | null>(null);
+  const tileLayer = React.useRef<TileLayer<XYZ> | null>(null);
   const mapRef = React.useRef<Map | null>(null);
   const mapElement = React.useRef<HTMLDivElement | null>(null);
   const prevMap = usePrevious(mapRef.current);
@@ -86,6 +87,10 @@ export default function GameMap({
   React.useEffect(() => {
     if (mapReady) onReady();
   }, [mapReady, onReady]);
+
+  React.useEffect(() => {
+    tileLayer.current?.setVisible(showMap);
+  }, [showMap]);
 
   React.useEffect(() => {
     if (citiesSource.current === null) return;
@@ -144,18 +149,17 @@ export default function GameMap({
         }
       },
     });
+    tileLayer.current = new TileLayer({
+      source: new XYZ({
+        url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      }),
+      zIndex: 1,
+      visible: showMap,
+    });
+
     mapRef.current = new Map({
       target: mapElement.current ?? undefined,
-      layers: [
-        new TileLayer({
-          source: new XYZ({
-            url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          }),
-          zIndex: 1,
-          visible: showMap,
-        }),
-        vectorLayer,
-      ],
+      layers: [tileLayer.current, vectorLayer],
       view: new View({
         center: [0, 0],
         zoom: 1,

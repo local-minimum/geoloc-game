@@ -21,5 +21,5 @@ function cityRowToCity(row: CityRow): City {
 }
 
 export default function useCities(): City[] {
-  return useMemo(() => cities.rows.map(cityRowToCity), []);
+  return useMemo(() => cities.rows.sort(([a], [b]) => (a > b ? 1 : -1)).map(cityRowToCity), []);
 }

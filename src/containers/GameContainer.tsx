@@ -1,4 +1,4 @@
-import { sample } from 'lodash';
+import { isEqual, sample } from 'lodash';
 import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
@@ -39,6 +39,13 @@ export default function GameContainer(): JSX.Element {
         cities={guesses}
         onReady={handleMapReady}
         target={target}
+        showMap={
+          guesses.some(
+            (guess) => (
+              guess.name === target?.name && isEqual(guess.coordinates, target.coordinates)
+            ),
+          )
+        }
       />
       <UserHud
         cities={cities}
