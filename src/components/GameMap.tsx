@@ -11,7 +11,7 @@ import VectorSource from 'ol/source/Vector';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom';
 import {
-  Fill, Stroke, Style,
+  Fill, Stroke, Style, Text,
 } from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
@@ -37,6 +37,12 @@ const cityStyle = new Style({
       color: '#e77158',
       width: 2,
     }),
+  }),
+  text: new Text({
+    placement: 'point',
+    fill: new Fill({ color: '#ec957d' }),
+    stroke: new Stroke({ color: '#ec957d', width: 1 }),
+    offsetY: -12,
   }),
 });
 
@@ -121,6 +127,7 @@ export default function GameMap({
       style: function styleFeature(feature) {
         switch (feature.get('featureType') as MapFeatureTypes) {
           case MapFeatureTypes.CityGuess:
+            cityStyle.getText()?.setText((feature.get('city') as City).name);
             return cityStyle;
           case MapFeatureTypes.WithinArea:
             // eslint-disable-next-line no-case-declarations
