@@ -116,6 +116,7 @@ export default function UserHud({
           </Badge>
         </Tooltip>
         <Button
+          disabled={solved}
           startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
           onClick={onGiveUp}
           variant="outlined"
