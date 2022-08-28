@@ -1,7 +1,7 @@
-import { faCity, faFlag } from '@fortawesome/free-solid-svg-icons';
+import { faCity, faDoorClosed, faFlag } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Autocomplete, Badge, Paper, TextField, Tooltip, Typography,
+  Autocomplete, Badge, Button, Paper, TextField, Tooltip, Typography,
 } from '@mui/material';
 import { Stack } from '@mui/system';
 import { last } from 'lodash';
@@ -16,6 +16,7 @@ interface UserHudProps {
   guesses: GuessOption[],
   target: City | undefined,
   onGuess: (guess: GuessOption) => void,
+  onGiveUp: () => void;
   solved: boolean;
   foundCountry: boolean;
 }
@@ -36,7 +37,7 @@ function guessName(option: GuessOption): string {
 const maxOptions = 30;
 
 export default function UserHud({
-  options, onGuess, guesses, target, solved, foundCountry,
+  options, onGuess, guesses, target, solved, foundCountry, onGiveUp,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const guess = last(guesses);
@@ -114,11 +115,22 @@ export default function UserHud({
             <FontAwesomeIcon icon={faFlag} size="2x" />
           </Badge>
         </Tooltip>
+        <Button
+          startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
+          onClick={onGiveUp}
+          variant="outlined"
+        >
+          Give up.
+        </Button>
         <Typography>
-          {target && !solved && foundCountry && `The city is in ${target?.country} | `}
-          {guess && (
-            solved ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
-          )}
+          <Stack>
+            {target && !solved && foundCountry && <div>{`The city is in ${target?.country}`}</div>}
+            {guess && (
+              <div>
+                {solved ? `Found it! It was ${target?.name ?? ''}` : `Most Recent guess: ${guess.name}`}
+              </div>
+            )}
+          </Stack>
         </Typography>
       </Stack>
     </Paper>

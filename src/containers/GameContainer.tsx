@@ -29,6 +29,12 @@ export default function GameContainer(): JSX.Element {
     setGuesses([...guesses, guess]);
   }, [guesses, target]);
 
+  const handleSurrender = React.useCallback(() => {
+    if (target === undefined) return;
+    setSolvedIt(true);
+    setGuesses([...guesses, target]);
+  }, [guesses, target]);
+
   return (
     <Box
       sx={{
@@ -46,6 +52,7 @@ export default function GameContainer(): JSX.Element {
       <UserHud
         options={guessOptions}
         onGuess={handleAddGuess}
+        onGiveUp={handleSurrender}
         guesses={guesses}
         target={target}
         solved={solvedIt}
