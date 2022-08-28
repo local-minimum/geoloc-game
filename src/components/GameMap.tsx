@@ -189,8 +189,11 @@ export default function GameMap({
       visible: true,
       zIndex: 10,
       style: function styleFeature(feature) {
-        if ((feature.get('country') as Country).name === target.name) {
-          countryStyle.getFill().setColor('#d8ecde');
+        const fill = countryStyle.getFill();
+        if ((feature.get('country') as Country).name === target.country) {
+          fill.setColor('#d8ecde');
+        } else {
+          fill.setColor('#438db6');
         }
         return countryStyle;
       },

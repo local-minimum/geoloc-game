@@ -33,28 +33,16 @@ export interface Country extends GuessOption {
  coordinates: Coordinate[][] | Coordinate[][][],
 }
 
-function hasKeys(a: GuessOption, b: string[]): boolean {
-  const keys = [...Object.keys(a)];
-  if (keys.length !== b.length) return false;
-  return keys.filter((k) => b.includes(k)).length === b.length;
-}
-
 export function isCity(guessOption: GuessOption | undefined): guessOption is City {
   if (guessOption === undefined) return false;
 
-  return hasKeys(
-    guessOption,
-    ['name', 'capital', 'country', 'region', 'coordinates'],
-  );
+  return (guessOption as City).country !== undefined;
 }
 
 export function isCountry(guessOption: GuessOption | undefined): guessOption is Country {
   if (guessOption === undefined) return false;
 
-  return hasKeys(
-    guessOption,
-    ['name', 'continent', 'colorIdx', 'type', 'coordinates'],
-  );
+  return (guessOption as Country).type !== undefined;
 }
 
 export function asCity(guessOption: GuessOption | undefined): City {

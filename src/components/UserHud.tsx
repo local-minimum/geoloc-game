@@ -9,6 +9,7 @@ import * as React from 'react';
 import {
   City, GuessOption, isCity, isCountry,
 } from '../hooks/types';
+import GuessInputOption from './GuessInputOption';
 
 interface UserHudProps {
   options: GuessOption[],
@@ -31,6 +32,8 @@ function guessName(option: GuessOption): string {
   }
   return option.name;
 }
+
+const maxOptions = 30;
 
 export default function UserHud({
   options, onGuess, guesses, target, solved, foundCountry,
@@ -74,10 +77,32 @@ export default function UserHud({
                 break;
             }
           }}
+          filterOptions={(opts, { inputValue: inputVal }) => {
+            const lower = inputVal.toLocaleLowerCase().replace(' ', '');
+            const candidates = opts
+              .filter((o) => guessName(o).toLocaleLowerCase().replace(' ', '').includes(lower));
+            const [hit] = candidates
+              .filter(({ name }) => name.toLowerCase().replace(' ', '') === lower);
+            if (hit !== undefined) {
+              return [
+                hit,
+                ...candidates.filter((o) => o !== hit).slice(0, maxOptions - 1),
+              ];
+            }
+            return candidates.slice(0, maxOptions);
+          }}
           getOptionLabel={guessName}
           sx={{ width: 'min(400px, 80%)' }}
           // eslint-disable-next-line react/jsx-props-no-spreading
           renderInput={(params) => <TextField {...params} label="City" autoFocus />}
+          renderOption={(params, opt) => (
+            <li
+              // eslint-disable-next-line react/jsx-props-no-spreading
+              {...params}
+            >
+              <GuessInputOption option={opt} />
+            </li>
+          )}
         />
         <Tooltip title="City guesses">
           <Badge badgeContent={cities} color="primary">
