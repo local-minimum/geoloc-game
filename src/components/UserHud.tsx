@@ -78,11 +78,11 @@ export default function UserHud({
             }
           }}
           filterOptions={(opts, { inputValue: inputVal }) => {
-            const lower = inputVal.toLocaleLowerCase().replace(' ', '');
+            const lower = inputVal.toLocaleLowerCase().replace(/ /g, '');
             const candidates = opts
-              .filter((o) => guessName(o).toLocaleLowerCase().replace(' ', '').includes(lower));
+              .filter((o) => guessName(o).toLocaleLowerCase().replace(/ /g, '').includes(lower));
             const [hit] = candidates
-              .filter(({ name }) => name.toLowerCase().replace(' ', '') === lower);
+              .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower);
             if (hit !== undefined) {
               return [
                 hit,
