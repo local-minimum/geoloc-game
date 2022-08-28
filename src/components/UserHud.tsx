@@ -90,8 +90,7 @@ export default function UserHud({
           </Badge>
         </Tooltip>
         <Typography>
-          {target && !solved && foundCountry && `The city is in ${target?.country}`}
-          {' | '}
+          {target && !solved && foundCountry && `The city is in ${target?.country} | `}
           {guess && (
             solved ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
           )}
