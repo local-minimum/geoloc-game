@@ -23,11 +23,6 @@ country_properties = {
     'TYPE': 'type',
 }
 
-geometry = {
-    'MultiPolygon': lambda mp: mp,
-}
-
-
 with open(path, 'r') as fh:
     data = json.load(fh)
 
@@ -35,25 +30,21 @@ with open(path, 'r') as fh:
 name = data['name']
 features = data['features']
 rows = []
-geom_type = None
 prop_type = country_properties
 
 for feature in features:
     geom = feature['geometry']
-    if geom_type is None:
-        geom_type = geom['type']
-    coords = geometry[geom_type](geom['coordinates'])
+    coords = [poly[0] for poly in geom['coordinates']]
     props = feature['properties']
     properties = [
         props[p] if p != 'TYPE' else types.index(props[p])
         for p in prop_type
     ]
 
-    rows.append(properties + coords)
+    rows.append(properties + [coords])
 
 res = {
     "name": name,
-    "type": geom_type,
     "columns": list(prop_type.values()) + ['coordinates'],
     "rows": rows,
 }

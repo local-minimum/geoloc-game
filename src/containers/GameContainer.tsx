@@ -21,6 +21,9 @@ export default function GameContainer(): JSX.Element {
     if (isSame(guess, target)) {
       setSolvedIt(true);
     }
+    if (isCountry(guess)) {
+      console.log(guess.coordinates.map((c) => c.length));
+    }
     if (isCountry(guess) && target.country === guess.name) {
       setFoundCountry(true);
     }
