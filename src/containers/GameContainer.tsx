@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
 import UserHud from '../components/UserHud';
-import { GuessOption, isSame } from '../hooks/types';
+import { GuessOption, isCountry, isSame } from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
 
 export default function GameContainer(): JSX.Element {
@@ -13,8 +13,17 @@ export default function GameContainer(): JSX.Element {
 
   const [guessOptions, target] = useGuessOptions();
   const [guesses, setGuesses] = React.useState<GuessOption[]>([]);
+  const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
+  const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
+
   const handleAddGuess = React.useCallback((guess: GuessOption) => {
     if (target === undefined) return;
+    if (isSame(guess, target)) {
+      setSolvedIt(true);
+    }
+    if (isCountry(guess) && target.country === guess.name) {
+      setFoundCountry(true);
+    }
     setGuesses([...guesses, guess]);
   }, [guesses, target]);
 
@@ -36,6 +45,8 @@ export default function GameContainer(): JSX.Element {
         onGuess={handleAddGuess}
         guesses={guesses}
         target={target}
+        solved={solvedIt}
+        foundCountry={foundCountry}
       />
     </Box>
   );

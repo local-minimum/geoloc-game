@@ -7,7 +7,7 @@ import { Stack } from '@mui/system';
 import { last } from 'lodash';
 import * as React from 'react';
 import {
-  City, GuessOption, isCity, isCountry, isSame,
+  City, GuessOption, isCity, isCountry,
 } from '../hooks/types';
 
 interface UserHudProps {
@@ -15,6 +15,8 @@ interface UserHudProps {
   guesses: GuessOption[],
   target: City | undefined,
   onGuess: (guess: GuessOption) => void,
+  solved: boolean;
+  foundCountry: boolean;
 }
 
 function guessName(option: GuessOption): string {
@@ -31,7 +33,7 @@ function guessName(option: GuessOption): string {
 }
 
 export default function UserHud({
-  options, onGuess, guesses, target,
+  options, onGuess, guesses, target, solved, foundCountry,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const guess = last(guesses);
@@ -88,8 +90,10 @@ export default function UserHud({
           </Badge>
         </Tooltip>
         <Typography>
+          {target && !solved && foundCountry && `The city is in ${target?.country}`}
+          {' | '}
           {guess && (
-            isSame(guess, target) ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
+            solved ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
           )}
         </Typography>
       </Stack>
