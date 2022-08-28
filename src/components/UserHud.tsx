@@ -1,4 +1,8 @@
-import { Autocomplete, Paper, TextField } from '@mui/material';
+import { faCity, faFlag } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Autocomplete, Badge, Paper, TextField, Tooltip, Typography,
+} from '@mui/material';
 import { Stack } from '@mui/system';
 import { last } from 'lodash';
 import * as React from 'react';
@@ -31,6 +35,8 @@ export default function UserHud({
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const guess = last(guesses);
+  const cities = guesses.filter(isCity).length;
+  const countries = guesses.length - cities;
   return (
     <Paper
       elevation={2}
@@ -42,7 +48,7 @@ export default function UserHud({
         padding: 2,
       }}
     >
-      <Stack direction="row">
+      <Stack direction="row" gap={2} alignItems="center">
         <Autocomplete
           disabled={target === undefined}
           size="small"
@@ -71,9 +77,21 @@ export default function UserHud({
           // eslint-disable-next-line react/jsx-props-no-spreading
           renderInput={(params) => <TextField {...params} label="City" autoFocus />}
         />
-        {guess && (
-          isSame(guess, target) ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
-        )}
+        <Tooltip title="City guesses">
+          <Badge badgeContent={cities} color="primary">
+            <FontAwesomeIcon icon={faCity} size="2x" />
+          </Badge>
+        </Tooltip>
+        <Tooltip title="Country guesses">
+          <Badge badgeContent={countries} color="secondary">
+            <FontAwesomeIcon icon={faFlag} size="2x" />
+          </Badge>
+        </Tooltip>
+        <Typography>
+          {guess && (
+            isSame(guess, target) ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
+          )}
+        </Typography>
       </Stack>
     </Paper>
   );
