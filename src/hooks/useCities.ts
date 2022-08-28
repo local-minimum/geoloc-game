@@ -1,13 +1,6 @@
 import { useMemo } from 'react';
 import cities, { CityRow } from '../data/cities';
-
-export interface City {
-  name: string;
-  capital: 1 | 0;
-  country: string | null;
-  region: string | null;
-  coordinates: [longitude: number, latitude: number];
-}
+import { City } from './types';
 
 function cityRowToCity(row: CityRow): City {
   const [name, capital, country, region, longitude, latitude] = row;
@@ -21,5 +14,8 @@ function cityRowToCity(row: CityRow): City {
 }
 
 export default function useCities(): City[] {
-  return useMemo(() => cities.rows.sort(([a], [b]) => (a > b ? 1 : -1)).map(cityRowToCity), []);
+  return useMemo(
+    () => cities.rows.sort(([a], [b]) => (a > b ? 1 : -1)).map(cityRowToCity),
+    [],
+  );
 }

@@ -1,6 +1,6 @@
 import { Coordinate } from 'ol/coordinate';
 import { LineString } from 'ol/geom';
-import { City } from '../hooks/useCities';
+import { City } from '../hooks/types';
 
 export function getMapDistance(
   city: City,

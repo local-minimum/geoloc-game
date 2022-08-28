@@ -2,25 +2,32 @@ import { Autocomplete, Paper, TextField } from '@mui/material';
 import { Stack } from '@mui/system';
 import { last } from 'lodash';
 import * as React from 'react';
-import { CityWithTargetInfo } from '../ExtendedCity';
-import { City } from '../hooks/useCities';
+import {
+  City, GuessOption, isCity, isCountry, isSame,
+} from '../hooks/types';
 
 interface UserHudProps {
-  cities: City[],
-  guesses: CityWithTargetInfo[],
+  options: GuessOption[],
+  guesses: GuessOption[],
   target: City | undefined,
-  onGuessCity: (guess: City) => void,
+  onGuess: (guess: GuessOption) => void,
 }
 
-function guessName(city: City): string {
-  if (city.country == null && city.region == null) return city.name;
-  if (city.region == null) return `${city.name} || ${city.country}`;
-  if (city.country == null) return `${city.name} | ${city.region} |`;
-  return `${city.name} | ${city.region} | ${city.country}`;
+function guessName(option: GuessOption): string {
+  if (isCity(option)) {
+    if (option.country == null && option.region == null) return option.name;
+    if (option.region == null) return `${option.name} || ${option.country}`;
+    if (option.country == null) return `${option.name} | ${option.region} |`;
+    return `${option.name} | ${option.region} | ${option.country}`;
+  }
+  if (isCountry(option)) {
+    return option.name;
+  }
+  return option.name;
 }
 
 export default function UserHud({
-  cities, onGuessCity, guesses, target,
+  options, onGuess, guesses, target,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const guess = last(guesses);
@@ -41,13 +48,13 @@ export default function UserHud({
           size="small"
           inputValue={inputValue}
           disablePortal
-          options={cities}
+          options={options}
           clearOnBlur
           clearOnEscape
           getOptionDisabled={
-            (option: City) => guesses.some((g) => guessName(g) === guessName(option))
+            (option: GuessOption) => guesses.some((g) => guessName(g) === guessName(option))
           }
-          onChange={(_, city) => city !== null && onGuessCity(city)}
+          onChange={(_, option) => option !== null && onGuess(option)}
           onInputChange={(_, value, reason) => {
             switch (reason) {
               case 'input':
@@ -59,13 +66,13 @@ export default function UserHud({
                 break;
             }
           }}
-          getOptionLabel={(option: City) => guessName(option)}
+          getOptionLabel={guessName}
           sx={{ width: 'min(400px, 80%)' }}
           // eslint-disable-next-line react/jsx-props-no-spreading
           renderInput={(params) => <TextField {...params} label="City" autoFocus />}
         />
         {guess && (
-          guess.isSame ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
+          isSame(guess, target) ? `Found it! It was ${guess.name}` : `Most Recent: ${guess.name}`
         )}
       </Stack>
     </Paper>

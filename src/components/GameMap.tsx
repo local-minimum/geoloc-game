@@ -9,13 +9,16 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 
 import { Feature } from 'ol';
-import { Point } from 'ol/geom';
+import { MultiPolygon, Point, Polygon } from 'ol/geom';
 import {
   Fill, Stroke, Style, Text,
 } from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
-import { City } from '../hooks/useCities';
+import { Coordinate } from 'ol/coordinate';
+import {
+  City, Country, GuessOption, isCity, isCountry,
+} from '../hooks/types';
 import usePrevious from '../hooks/usePrevious';
 import { getMapDistance } from '../utils/geo';
 
@@ -27,6 +30,15 @@ import { getMapDistance } from '../utils/geo';
 #e77158
 #c3c3a8
 */
+
+const countryStyle = new Style({
+  zIndex: 10,
+  fill: new Fill({ color: '#438db6' }),
+  stroke: new Stroke({
+    color: '#c2ddd0',
+    width: 1,
+  }),
+});
 
 const cityStyle = new Style({
   zIndex: 100,
@@ -59,7 +71,7 @@ const withAreaStyle = new Style({
 });
 
 interface GameMapProps {
-  cities?: City[];
+  guesses?: GuessOption[];
   target?: City;
   onReady: () => void;
   showMap?: boolean,
@@ -72,11 +84,41 @@ enum MapFeatureTypes {
   WithinArea,
 }
 
+type AnyCoordinate = Coordinate | Coordinate[] | Coordinate[][] | Coordinate[][][];
+
+function isCoordinate(coordinates: unknown): coordinates is Coordinate {
+  return Array.isArray(coordinates) && coordinates.every((v) => typeof v === 'number');
+}
+
+function deepFromLonLat(coordinates: AnyCoordinate): AnyCoordinate {
+  if (isCoordinate(coordinates)) {
+    return fromLonLat(coordinates, MAP_PROJ);
+  }
+  return coordinates.map(deepFromLonLat) as AnyCoordinate;
+}
+
+function getDepth(coordinate: AnyCoordinate, depth = 0): number {
+  if (isCoordinate(coordinate)) return depth;
+  return getDepth(coordinate[0], depth + 1);
+}
+
+function anyCoordinateToGeom(coordinates: AnyCoordinate): Polygon | MultiPolygon {
+  const depth = getDepth(coordinates);
+  if (depth === 0) return new Polygon([[coordinates]] as unknown as Coordinate[][]);
+  if (depth === 1) return new Polygon([coordinates] as unknown as Coordinate[][]);
+  if (depth === 2) return new Polygon(coordinates as unknown as Coordinate[][]);
+  // if (depth === 2) return new MultiPolygon([coordinates] as unknown as Coordinate[][][]);
+  return new MultiPolygon(coordinates as unknown as Coordinate[][][]);
+}
+
+const N_CIRLCES = 1;
+
 export default function GameMap({
-  cities = [], onReady, showMap = false, target,
+  guesses = [], onReady, showMap = false, target,
 }: GameMapProps): JSX.Element {
   const [, causeRefresh] = React.useState<null | undefined>();
 
+  const countriesSource = React.useRef<VectorSource | null>(null);
   const citiesSource = React.useRef<VectorSource | null>(null);
   const tileLayer = React.useRef<TileLayer<XYZ> | null>(null);
   const mapRef = React.useRef<Map | null>(null);
@@ -95,37 +137,63 @@ export default function GameMap({
   React.useEffect(() => {
     if (citiesSource.current === null) return;
 
-    citiesSource.current.clear();
-
-    const cityFeatures = cities.map((city) => {
-      const { coordinates } = city;
-      const mapCoords = fromLonLat(coordinates, MAP_PROJ);
-      return new Feature({
-        geometry: new Point(mapCoords),
-        featureType: MapFeatureTypes.CityGuess,
-        city,
+    const cities = guesses.filter((guess) => isCity(guess)) as City[];
+    if (cities.length + N_CIRLCES !== citiesSource.current.getFeatures().length) {
+      citiesSource.current.clear();
+      const cityFeatures = cities.map((city) => {
+        const { coordinates } = city;
+        const mapCoords = fromLonLat(coordinates, MAP_PROJ);
+        return new Feature({
+          geometry: new Point(mapCoords),
+          featureType: MapFeatureTypes.CityGuess,
+          city,
+        });
       });
-    });
-    citiesSource.current.addFeatures(cityFeatures);
+      citiesSource.current.addFeatures(cityFeatures);
 
-    const withinFeatures = cities.slice(cities.length - 1).map((city) => {
-      const { coordinates } = city;
-      const mapCoords = fromLonLat(coordinates, MAP_PROJ);
-      return new Feature({
-        geometry: new Point(mapCoords),
-        featureType: MapFeatureTypes.WithinArea,
-        city,
+      const withinFeatures = cities.slice(cities.length - N_CIRLCES).map((city) => {
+        const { coordinates } = city;
+        const mapCoords = fromLonLat(coordinates, MAP_PROJ);
+        return new Feature({
+          geometry: new Point(mapCoords),
+          featureType: MapFeatureTypes.WithinArea,
+          city,
+        });
       });
-    });
-    citiesSource.current.addFeatures(withinFeatures);
-  }, [cities, mapReady]);
+      citiesSource.current.addFeatures(withinFeatures);
+    }
+
+    const countries = guesses.filter((guess) => isCountry(guess)) as Country[];
+    if (countries.length !== countriesSource.current?.getFeatures().length) {
+      countriesSource.current?.clear();
+
+      const countryFeatures = countries.map((country) => {
+        const { coordinates } = country;
+        const poly = deepFromLonLat(coordinates);
+        return new Feature({
+          geometry: anyCoordinateToGeom(poly),
+          country,
+        });
+      });
+      countriesSource.current?.addFeatures(countryFeatures);
+    }
+  }, [guesses, mapReady]);
 
   React.useEffect(() => {
     if (mapRef.current !== null || target === undefined) {
       return;
     }
+    const countryVectorSource = new VectorSource();
+    const countryVectorLayer = new VectorLayer({
+      source: countryVectorSource,
+      visible: true,
+      zIndex: 10,
+      style: function styleFeature(feature) {
+        return countryStyle;
+      },
+    });
     const citiesVectorSource = new VectorSource();
-    const vectorLayer = new VectorLayer({
+    const cityVectorLayer = new VectorLayer({
       source: citiesVectorSource,
       visible: true,
       zIndex: 100,
@@ -140,7 +208,6 @@ export default function GameMap({
             (style.getImage() as CircleStyle).setRadius(getMapDistance(
               feature.get('city') as City,
               target,
-              // (coordinates) => fromLonLat(coordinates, MAP_PROJ),
               (coordinates) => coordinates,
             ) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
             return style;
@@ -159,7 +226,7 @@ export default function GameMap({
 
     mapRef.current = new Map({
       target: mapElement.current ?? undefined,
-      layers: [tileLayer.current, vectorLayer],
+      layers: [tileLayer.current, countryVectorLayer, cityVectorLayer],
       view: new View({
         center: [0, 0],
         zoom: 1,
@@ -167,8 +234,9 @@ export default function GameMap({
       }),
     });
     citiesSource.current = citiesVectorSource;
+    countriesSource.current = countryVectorSource;
     mapRef.current.on('moveend', (evt) => {
-      vectorLayer.changed();
+      cityVectorLayer.changed();
     });
     causeRefresh(null);
   }, [showMap, target]);

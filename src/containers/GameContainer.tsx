@@ -1,10 +1,9 @@
-import { isEqual, sample } from 'lodash';
 import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
 import UserHud from '../components/UserHud';
-import useCities, { City } from '../hooks/useCities';
-import { CityWithTargetInfo } from '../ExtendedCity';
+import { GuessOption, isSame } from '../hooks/types';
+import { useGuessOptions } from '../hooks/useGuessOptions';
 
 export default function GameContainer(): JSX.Element {
   const [mapLoaded, setMapLoaded] = React.useState(false);
@@ -12,19 +11,10 @@ export default function GameContainer(): JSX.Element {
     if (!mapLoaded) setMapLoaded(true);
   }, [mapLoaded]);
 
-  const cities = useCities();
-  const target = React.useMemo(() => sample(cities), [cities]);
-  const [guesses, setGuesses] = React.useState<CityWithTargetInfo[]>([]);
-  const handleAddGuess = React.useCallback((city: City) => {
+  const [guessOptions, target] = useGuessOptions();
+  const [guesses, setGuesses] = React.useState<GuessOption[]>([]);
+  const handleAddGuess = React.useCallback((guess: GuessOption) => {
     if (target === undefined) return;
-    const sameCountry = city.country === target?.country;
-    const sameRegion = sameCountry && city.region === target?.region;
-    const guess: CityWithTargetInfo = {
-      ...city,
-      sameCountry,
-      sameRegion,
-      isSame: sameRegion && city.name === target?.name,
-    };
     setGuesses([...guesses, guess]);
   }, [guesses, target]);
 
@@ -36,20 +26,14 @@ export default function GameContainer(): JSX.Element {
       }}
     >
       <GameMap
-        cities={guesses}
+        guesses={guesses}
         onReady={handleMapReady}
         target={target}
-        showMap={
-          guesses.some(
-            (guess) => (
-              guess.name === target?.name && isEqual(guess.coordinates, target.coordinates)
-            ),
-          )
-        }
+        showMap={guesses.some((guess) => isSame(guess, target))}
       />
       <UserHud
-        cities={cities}
-        onGuessCity={handleAddGuess}
+        options={guessOptions}
+        onGuess={handleAddGuess}
         guesses={guesses}
         target={target}
       />
