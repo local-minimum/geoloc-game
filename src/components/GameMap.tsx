@@ -9,13 +9,13 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 
 import { Feature } from 'ol';
-import { MultiPolygon, Point, Polygon } from 'ol/geom';
+import { Point, Polygon } from 'ol/geom';
 import {
   Fill, Stroke, Style, Text,
 } from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
-import { Coordinate } from 'ol/coordinate';
+// import { Coordinate } from 'ol/coordinate';
 import {
   City, Country, GuessOption, isCity, isCountry,
 } from '../hooks/types';
@@ -75,26 +75,19 @@ interface GameMapProps {
   target?: City;
   onReady: () => void;
   showMap?: boolean,
+  projection: string,
 }
-
-const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
 
 enum MapFeatureTypes {
   CityGuess,
   WithinArea,
 }
 
+/*
 type AnyCoordinate = Coordinate | Coordinate[] | Coordinate[][] | Coordinate[][][];
 
 function isCoordinate(coordinates: unknown): coordinates is Coordinate {
   return Array.isArray(coordinates) && coordinates.every((v) => typeof v === 'number');
-}
-
-function deepFromLonLat(coordinates: AnyCoordinate): AnyCoordinate {
-  if (isCoordinate(coordinates)) {
-    return fromLonLat(coordinates, MAP_PROJ);
-  }
-  return coordinates.map(deepFromLonLat) as AnyCoordinate;
 }
 
 function getDepth(coordinate: AnyCoordinate, depth = 0): number {
@@ -110,11 +103,12 @@ function anyCoordinateToGeom(coordinates: AnyCoordinate): Polygon | MultiPolygon
   // if (depth === 2) return new MultiPolygon([coordinates] as unknown as Coordinate[][][]);
   return new MultiPolygon(coordinates as unknown as Coordinate[][][]);
 }
+*/
 
 const N_CIRLCES = 1;
 
 export default function GameMap({
-  guesses = [], onReady, showMap = false, target,
+  guesses = [], onReady, showMap = false, target, projection,
 }: GameMapProps): JSX.Element {
   const [, causeRefresh] = React.useState<null | undefined>();
 
@@ -142,7 +136,7 @@ export default function GameMap({
       citiesSource.current.clear();
       const cityFeatures = cities.map((city) => {
         const { coordinates } = city;
-        const mapCoords = fromLonLat(coordinates, MAP_PROJ);
+        const mapCoords = fromLonLat(coordinates, projection);
         return new Feature({
           geometry: new Point(mapCoords),
           featureType: MapFeatureTypes.CityGuess,
@@ -153,7 +147,7 @@ export default function GameMap({
 
       const withinFeatures = cities.slice(cities.length - N_CIRLCES).map((city) => {
         const { coordinates } = city;
-        const mapCoords = fromLonLat(coordinates, MAP_PROJ);
+        const mapCoords = fromLonLat(coordinates, projection);
         return new Feature({
           geometry: new Point(mapCoords),
           featureType: MapFeatureTypes.WithinArea,
@@ -169,15 +163,14 @@ export default function GameMap({
 
       const countryFeatures = countries.map((country) => {
         const { coordinates } = country;
-        const poly = deepFromLonLat(coordinates);
         return new Feature({
-          geometry: anyCoordinateToGeom(poly),
+          geometry: new Polygon(coordinates),
           country,
         });
       });
       countriesSource.current?.addFeatures(countryFeatures);
     }
-  }, [guesses, mapReady]);
+  }, [guesses, mapReady, projection]);
 
   React.useEffect(() => {
     if (mapRef.current !== null || target === undefined) {
@@ -214,7 +207,6 @@ export default function GameMap({
             (style.getImage() as CircleStyle).setRadius(getMapDistance(
               feature.get('city') as City,
               target,
-              (coordinates) => coordinates,
             ) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
             return style;
           default:
@@ -236,7 +228,7 @@ export default function GameMap({
       view: new View({
         center: [0, 0],
         zoom: 1,
-        projection: MAP_PROJ,
+        projection,
       }),
     });
     citiesSource.current = citiesVectorSource;
@@ -245,7 +237,7 @@ export default function GameMap({
       cityVectorLayer.changed();
     });
     causeRefresh(null);
-  }, [showMap, target]);
+  }, [showMap, target, projection]);
 
   return (
     <Box

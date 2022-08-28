@@ -1,5 +1,7 @@
 import { flatten, sample } from 'lodash';
+import { ProjectionLike } from 'ol/proj';
 import { useMemo } from 'react';
+import { deepFromLonLat } from '../utils/geo';
 import {
   asCity, GuessOption, City,
 } from './types';
@@ -18,12 +20,19 @@ const CountryTranslations: Record<string, string> = {
   Vatican: 'Vatican City',
 };
 
-export function useGuessOptions(): [GuessOption[], City] {
-  const cities = useCities().map(({ country, ...rest }) => ({
+export function useGuessOptions(projection: ProjectionLike): [GuessOption[], City] {
+  const rawCities = useCities();
+  const cities = useMemo(() => rawCities.map(({ country, ...rest }) => ({
     country: CountryTranslations[country ?? ''] === undefined ? country : CountryTranslations[country ?? ''],
     ...rest,
-  })) as GuessOption[];
-  const countries = useCountries() as GuessOption[];
+  })) as GuessOption[], [rawCities]);
+
+  const rawCountries = useCountries();
+  const countries = useMemo(() => rawCountries.map(({ coordinates, ...rest }) => ({
+    coordinates: deepFromLonLat(coordinates, projection),
+    ...rest,
+  })) as GuessOption[], [rawCountries, projection]);
+
   return useMemo(() => [
     flatten([cities, countries])
       .sort(({ name: a }, { name: b }) => (a > b ? 1 : -1)),

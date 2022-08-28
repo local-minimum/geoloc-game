@@ -30,7 +30,7 @@ export interface Country extends GuessOption {
  continent: string;
  colorIdx: number,
  type: CountryType,
- coordinates: Coordinate[][] | Coordinate[][][],
+ coordinates: Coordinate[][]
 }
 
 export function isCity(guessOption: GuessOption | undefined): guessOption is City {

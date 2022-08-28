@@ -5,13 +5,15 @@ import UserHud from '../components/UserHud';
 import { GuessOption, isCountry, isSame } from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
 
+const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
+
 export default function GameContainer(): JSX.Element {
   const [mapLoaded, setMapLoaded] = React.useState(false);
   const handleMapReady = React.useCallback(() => {
     if (!mapLoaded) setMapLoaded(true);
   }, [mapLoaded]);
 
-  const [guessOptions, target] = useGuessOptions();
+  const [guessOptions, target] = useGuessOptions(MAP_PROJ);
   const [guesses, setGuesses] = React.useState<GuessOption[]>([]);
   const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
   const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
@@ -35,6 +37,7 @@ export default function GameContainer(): JSX.Element {
       }}
     >
       <GameMap
+        projection={MAP_PROJ}
         guesses={guesses}
         onReady={handleMapReady}
         target={target}
