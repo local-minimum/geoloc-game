@@ -7,7 +7,7 @@ import { Stack } from '@mui/system';
 import { last } from 'lodash';
 import * as React from 'react';
 import {
-  City, GuessOption, isCity, isCountry,
+  City, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import GuessInputOption from './GuessInputOption';
 
@@ -80,14 +80,19 @@ export default function UserHud({
           }}
           filterOptions={(opts, { inputValue: inputVal }) => {
             const lower = inputVal.toLocaleLowerCase().replace(/ /g, '');
+            const words = inputVal.toLocaleLowerCase().split(/[ -]/);
+            if (inputVal.length === 0) return opts.slice(0, maxOptions);
             const candidates = opts
-              .filter((o) => guessName(o).toLocaleLowerCase().replace(/ /g, '').includes(lower));
-            const [hit] = candidates
-              .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower);
-            if (hit !== undefined) {
+              .filter((opt) => guessName(opt).toLocaleLowerCase().replace(/ /g, '').includes(lower));
+            const hits = candidates
+              .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower
+                || name.toLowerCase().split(/[ -]/).filter((w) => words.includes(w)).length === words.length);
+            if (hits.length > 0) {
               return [
-                hit,
-                ...candidates.filter((o) => o !== hit).slice(0, maxOptions - 1),
+                ...hits,
+                ...candidates
+                  .filter((opt) => !hits.some((opt2) => isSame(opt, opt2)))
+                  .slice(0, Math.max(0, maxOptions - hits.length)),
               ];
             }
             return candidates.slice(0, maxOptions);
@@ -123,16 +128,14 @@ export default function UserHud({
         >
           Give up.
         </Button>
-        <Typography>
-          <Stack>
-            {target && !solved && foundCountry && <div>{`The city is in ${target?.country}`}</div>}
-            {guess && (
-              <div>
-                {solved ? `Found it! It was ${target?.name ?? ''}` : `Most Recent guess: ${guess.name}`}
-              </div>
-            )}
-          </Stack>
-        </Typography>
+        <Stack>
+          {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
+          {guess && (
+            <Typography>
+              {solved ? `Found it! It was ${target?.name ?? ''}` : `Most Recent guess: ${guess.name}`}
+            </Typography>
+          )}
+        </Stack>
       </Stack>
     </Paper>
   );
