@@ -17,7 +17,7 @@ import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
 // import { Coordinate } from 'ol/coordinate';
 import {
-  City, Country, GuessOption, isCity, isCountry,
+  City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import usePrevious from '../hooks/usePrevious';
 import { getMapDistance } from '../utils/geo';
@@ -61,10 +61,21 @@ const cityStyle = new Style({
 const withAreaStyle = new Style({
   zIndex: 10,
   image: new CircleStyle({
-    radius: 4,
-    fill: new Fill({ color: alpha('#c2ddd0', 0.4) }),
+    radius: 1,
+    fill: new Fill({ color: alpha('#c2ddd0', 0.5) }),
     stroke: new Stroke({
-      color: alpha('#d8ecde', 0.7),
+      color: alpha('#222', 0.5),
+      width: 2,
+    }),
+  }),
+});
+
+const withBorderStyle = new Style({
+  zIndex: 10,
+  image: new CircleStyle({
+    radius: 1,
+    stroke: new Stroke({
+      color: alpha('#222', 0.5),
       width: 2,
     }),
   }),
@@ -81,31 +92,11 @@ interface GameMapProps {
 enum MapFeatureTypes {
   CityGuess,
   WithinArea,
+  WithinBorder,
 }
-
-/*
-type AnyCoordinate = Coordinate | Coordinate[] | Coordinate[][] | Coordinate[][][];
-
-function isCoordinate(coordinates: unknown): coordinates is Coordinate {
-  return Array.isArray(coordinates) && coordinates.every((v) => typeof v === 'number');
-}
-
-function getDepth(coordinate: AnyCoordinate, depth = 0): number {
-  if (isCoordinate(coordinate)) return depth;
-  return getDepth(coordinate[0], depth + 1);
-}
-
-function anyCoordinateToGeom(coordinates: AnyCoordinate): Polygon | MultiPolygon {
-  const depth = getDepth(coordinates);
-  if (depth === 0) return new Polygon([[coordinates]] as unknown as Coordinate[][]);
-  if (depth === 1) return new Polygon([coordinates] as unknown as Coordinate[][]);
-  if (depth === 2) return new Polygon(coordinates as unknown as Coordinate[][]);
-  // if (depth === 2) return new MultiPolygon([coordinates] as unknown as Coordinate[][][]);
-  return new MultiPolygon(coordinates as unknown as Coordinate[][][]);
-}
-*/
 
 const N_CIRLCES = 1;
+const N_CIRCLE_OUTLINES = 5;
 
 export default function GameMap({
   guesses = [], onReady, showMap = false, target, projection,
@@ -145,15 +136,21 @@ export default function GameMap({
       });
       citiesSource.current.addFeatures(cityFeatures);
 
-      const withinFeatures = cities.slice(cities.length - N_CIRLCES).map((city) => {
-        const { coordinates } = city;
-        const mapCoords = fromLonLat(coordinates, projection);
-        return new Feature({
-          geometry: new Point(mapCoords),
-          featureType: MapFeatureTypes.WithinArea,
-          city,
+      const withinFeatures = cities
+        .slice(cities.length - (N_CIRLCES + N_CIRCLE_OUTLINES))
+        .map((city, idx, arr) => {
+          const { coordinates } = city;
+          const mapCoords = fromLonLat(coordinates, projection);
+          const featureType = idx < (arr.length - N_CIRLCES)
+            ? MapFeatureTypes.WithinBorder
+            : MapFeatureTypes.WithinArea;
+
+          return new Feature({
+            geometry: new Point(mapCoords),
+            featureType,
+            city,
+          });
         });
-      });
       citiesSource.current.addFeatures(withinFeatures);
     }
 
@@ -199,16 +196,37 @@ export default function GameMap({
       style: function styleFeature(feature) {
         switch (feature.get('featureType') as MapFeatureTypes) {
           case MapFeatureTypes.CityGuess:
-            cityStyle.getText()?.setText((feature.get('city') as City).name);
+            // eslint-disable-next-line no-case-declarations
+            const city = (feature.get('city') as City);
+            cityStyle.getText()?.setText(city.name);
+            if (isSame(city, target)) {
+              const targetStyle = cityStyle.clone();
+              targetStyle.getImage()?.setScale(2);
+              targetStyle.getText()?.setOffsetY(-22);
+              targetStyle.getText()?.setScale(2);
+              return targetStyle;
+            }
             return cityStyle;
           case MapFeatureTypes.WithinArea:
             // eslint-disable-next-line no-case-declarations
             const style = withAreaStyle.clone();
-            (style.getImage() as CircleStyle).setRadius(getMapDistance(
+            // eslint-disable-next-line no-case-declarations
+            const r = getMapDistance(
+              feature.get('city') as City,
+              target,
+            );
+            (style.getImage() as CircleStyle).setRadius(
+              r * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2),
+            );
+            return style;
+          case MapFeatureTypes.WithinBorder:
+            // eslint-disable-next-line no-case-declarations
+            const style2 = withBorderStyle.clone();
+            (style2.getImage() as CircleStyle).setRadius(getMapDistance(
               feature.get('city') as City,
               target,
             ) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
-            return style;
+            return style2;
           default:
             return undefined;
         }

@@ -13,6 +13,29 @@ export function getMapDistance(
   city: City,
   target: City,
 ): number {
+  const [fromLon, fromLat] = city.coordinates;
+  const [toLon, toLat] = target.coordinates;
+
+  if (Math.abs(fromLon - toLon) > 180) {
+    if (fromLon < toLon) {
+      return Math.ceil(new LineString(
+        [
+          [fromLon + 360, fromLat],
+          [toLon, toLat],
+        ],
+        'XY',
+      ).getLength());
+    }
+
+    return Math.ceil(new LineString(
+      [
+        [fromLon, fromLat],
+        [toLon + 360, toLat],
+      ],
+      'XY',
+    ).getLength());
+  }
+
   return Math.ceil(new LineString(
     [city.coordinates, target.coordinates],
     'XY',
