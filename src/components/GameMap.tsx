@@ -15,7 +15,6 @@ import {
 } from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
-// import { Coordinate } from 'ol/coordinate';
 import {
   City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
@@ -75,7 +74,7 @@ const withBorderStyle = new Style({
   image: new CircleStyle({
     radius: 1,
     stroke: new Stroke({
-      color: alpha('#222', 0.5),
+      color: alpha('#222', 0.3),
       width: 2,
     }),
   }),
@@ -123,7 +122,10 @@ export default function GameMap({
     if (citiesSource.current === null) return;
 
     const cities = guesses.filter((guess) => isCity(guess)) as City[];
-    if (cities.length + N_CIRLCES !== citiesSource.current.getFeatures().length) {
+    if (
+      cities.length + N_CIRLCES + N_CIRCLE_OUTLINES
+      !== citiesSource.current.getFeatures().length
+    ) {
       citiesSource.current.clear();
       const cityFeatures = cities.map((city) => {
         const { coordinates } = city;
@@ -137,7 +139,7 @@ export default function GameMap({
       citiesSource.current.addFeatures(cityFeatures);
 
       const withinFeatures = cities
-        .slice(cities.length - (N_CIRLCES + N_CIRCLE_OUTLINES))
+        .slice(Math.max(0, cities.length - (N_CIRLCES + N_CIRCLE_OUTLINES)))
         .map((city, idx, arr) => {
           const { coordinates } = city;
           const mapCoords = fromLonLat(coordinates, projection);
