@@ -1,15 +1,19 @@
-import { faCity, faDoorClosed, faFlag } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCity, faDoorClosed, faFlag, faMedal,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Autocomplete, Badge, Button, Paper, TextField, Tooltip, Typography,
 } from '@mui/material';
 import { Stack } from '@mui/system';
-import { last } from 'lodash';
+import { first, last } from 'lodash';
 import * as React from 'react';
 import {
-  City, GuessOption, isCity, isCountry, isSame,
+  City, GuessOption, isCity, isSame,
 } from '../hooks/types';
+import { guessName } from '../utils/text';
 import GuessInputOption from './GuessInputOption';
+import Victory from './Victory';
 
 interface UserHudProps {
   options: GuessOption[],
@@ -22,25 +26,14 @@ interface UserHudProps {
   foundCountry: boolean;
 }
 
-function guessName(option: GuessOption): string {
-  if (isCity(option)) {
-    if (option.country == null && option.region == null) return option.name;
-    if (option.region == null) return `${option.name} || ${option.country}`;
-    if (option.country == null) return `${option.name} | ${option.region} |`;
-    return `${option.name} | ${option.region} | ${option.country}`;
-  }
-  if (isCountry(option)) {
-    return option.name;
-  }
-  return option.name;
-}
-
 const maxOptions = 30;
 
 export default function UserHud({
   options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
+  const [showVictory, setShowVictory] = React.useState(true);
+  const start = first(guesses);
   const guess = last(guesses);
   const cities = guesses.filter(isCity).length;
   const countries = guesses.length - cities;
@@ -122,14 +115,25 @@ export default function UserHud({
             <FontAwesomeIcon icon={faFlag} size="2x" />
           </Badge>
         </Tooltip>
-        <Button
-          disabled={solved}
-          startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
-          onClick={onGiveUp}
-          variant="outlined"
-        >
-          Give up
-        </Button>
+        {solved ? (
+          <Button
+            disabled={showVictory}
+            startIcon={<FontAwesomeIcon icon={faMedal} />}
+            onClick={() => setShowVictory(true)}
+            variant="outlined"
+          >
+            Show victory
+          </Button>
+        ) : (
+          <Button
+            disabled={solved}
+            startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
+            onClick={onGiveUp}
+            variant="outlined"
+          >
+            Give up
+          </Button>
+        )}
         <Stack>
           {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
           {guess && (
@@ -139,6 +143,14 @@ export default function UserHud({
           )}
         </Stack>
       </Stack>
+      <Victory
+        open={solved && showVictory}
+        onClose={() => setShowVictory(false)}
+        target={target}
+        start={start}
+        cities={cities}
+        countries={countries}
+      />
     </Paper>
   );
 }
