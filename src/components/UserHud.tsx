@@ -76,21 +76,30 @@ export default function UserHud({
           filterOptions={(opts, { inputValue: inputVal }) => {
             const lower = inputVal.toLocaleLowerCase().replace(/ /g, '');
             const words = inputVal.toLocaleLowerCase().split(/[ -']/);
+
             if (inputVal.length === 0) return opts.slice(0, maxOptions);
+
             const candidates = opts
               .filter((opt) => guessName(opt).toLocaleLowerCase().replace(/ /g, '').includes(lower));
             const hits = candidates
               .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower
                 || name.toLowerCase().split(/[ -']/).filter((w) => words.includes(w)).length === words.length);
+            const sorter = (a: GuessOption, b: GuessOption) => ((
+              (guesses.some((g) => isSame(g, a)) || assists.some((ass) => isSame(ass, a)))
+              && !(guesses.some((g) => isSame(g, b) || assists.some((ass) => isSame(ass, b))))
+            ) ? 1 : -1);
+
             if (hits.length > 0) {
               return [
                 ...hits,
                 ...candidates
                   .filter((opt) => !hits.some((opt2) => isSame(opt, opt2)))
+                  .sort(sorter)
                   .slice(0, Math.max(0, maxOptions - hits.length)),
               ];
             }
-            return candidates.slice(0, maxOptions);
+
+            return candidates.sort(sorter).slice(0, maxOptions);
           }}
           getOptionLabel={guessName}
           sx={{ width: 'min(400px, 80%)' }}
