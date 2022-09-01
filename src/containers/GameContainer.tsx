@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
+import { HowToPlay } from '../components/HowToPlay';
 import UserHud from '../components/UserHud';
 import { GuessOption, isCountry, isSame } from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
@@ -58,6 +59,7 @@ export default function GameContainer(): JSX.Element {
         solved={solvedIt}
         foundCountry={foundCountry}
       />
+      <HowToPlay />
     </Box>
   );
 }

@@ -236,7 +236,7 @@ export default function GameMap({
     });
     tileLayer.current = new TileLayer({
       source: new XYZ({
-        url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        url: 'https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
       }),
       zIndex: 1,
       visible: showMap,

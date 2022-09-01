@@ -80,13 +80,13 @@ export default function UserHud({
           }}
           filterOptions={(opts, { inputValue: inputVal }) => {
             const lower = inputVal.toLocaleLowerCase().replace(/ /g, '');
-            const words = inputVal.toLocaleLowerCase().split(/[ -]/);
+            const words = inputVal.toLocaleLowerCase().split(/[ -']/);
             if (inputVal.length === 0) return opts.slice(0, maxOptions);
             const candidates = opts
               .filter((opt) => guessName(opt).toLocaleLowerCase().replace(/ /g, '').includes(lower));
             const hits = candidates
               .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower
-                || name.toLowerCase().split(/[ -]/).filter((w) => words.includes(w)).length === words.length);
+                || name.toLowerCase().split(/[ -']/).filter((w) => words.includes(w)).length === words.length);
             if (hits.length > 0) {
               return [
                 ...hits,
@@ -126,7 +126,7 @@ export default function UserHud({
           onClick={onGiveUp}
           variant="outlined"
         >
-          Give up.
+          Give up
         </Button>
         <Stack>
           {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
