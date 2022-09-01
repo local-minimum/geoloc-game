@@ -5,7 +5,7 @@ import GameMap from '../components/GameMap';
 import { HowToPlay } from '../components/HowToPlay';
 import UserHud from '../components/UserHud';
 import {
-  asCity, City, GuessOption, isCity, isCountry, isSame,
+  asCity, asCountry, City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
 
@@ -22,6 +22,15 @@ export default function GameContainer(): JSX.Element {
   const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
   const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
   const [assistGuesses, setAssistGuesses] = React.useState<City[]>([]);
+
+  const targetCountry = React.useMemo<Country | undefined>(
+    () => {
+      const c = guessOptions.find((opt) => isCountry(opt) && opt.name === target.country);
+      if (c === undefined) return undefined;
+      return asCountry(c);
+    },
+    [guessOptions, target.country],
+  );
 
   const handleAddGuess = React.useCallback((guess: GuessOption) => {
     if (target === undefined) return;
@@ -67,6 +76,7 @@ export default function GameContainer(): JSX.Element {
         onReady={handleMapReady}
         target={target}
         showMap={guesses.some((guess) => isSame(guess, target))}
+        foundCountry={foundCountry ? targetCountry : undefined}
       />
       <UserHud
         options={guessOptions}

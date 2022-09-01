@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Map from 'ol/Map';
-import { alpha, Box } from '@mui/material';
+import { Box } from '@mui/material';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import View from 'ol/View';
@@ -10,9 +10,6 @@ import VectorSource from 'ol/source/Vector';
 
 import { Feature } from 'ol';
 import { Point, Polygon } from 'ol/geom';
-import {
-  Fill, Stroke, Style, Text,
-} from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
 import {
@@ -20,65 +17,9 @@ import {
 } from '../hooks/types';
 import usePrevious from '../hooks/usePrevious';
 import { getMapDistance } from '../utils/geo';
-
-/*
-#438db6
-#c2ddd0
-#d8ecde
-#ec957d
-#e77158
-#c3c3a8
-*/
-
-const countryStyle = new Style({
-  zIndex: 10,
-  fill: new Fill({ color: '#438db6' }),
-  stroke: new Stroke({
-    color: '#c2ddd0',
-    width: 1,
-  }),
-});
-
-const cityStyle = new Style({
-  zIndex: 100,
-  image: new CircleStyle({
-    radius: 4,
-    fill: new Fill({ color: '#ec957d' }),
-    stroke: new Stroke({
-      color: '#e77158',
-      width: 2,
-    }),
-  }),
-  text: new Text({
-    placement: 'point',
-    fill: new Fill({ color: '#222' }),
-    stroke: new Stroke({ color: '#333', width: 1 }),
-    offsetY: -12,
-  }),
-});
-
-const withAreaStyle = new Style({
-  zIndex: 10,
-  image: new CircleStyle({
-    radius: 1,
-    fill: new Fill({ color: alpha('#c2ddd0', 0.5) }),
-    stroke: new Stroke({
-      color: alpha('#222', 0.5),
-      width: 2,
-    }),
-  }),
-});
-
-const withBorderStyle = new Style({
-  zIndex: 10,
-  image: new CircleStyle({
-    radius: 1,
-    stroke: new Stroke({
-      color: alpha('#222', 0.3),
-      width: 2,
-    }),
-  }),
-});
+import {
+  withAreaStyle, withBorderStyle, cityStyle, countryStyle,
+} from './mapStyles';
 
 interface GameMapProps {
   guesses?: GuessOption[];
@@ -86,6 +27,7 @@ interface GameMapProps {
   onReady: () => void;
   showMap?: boolean,
   projection: string,
+  foundCountry?: Country,
 }
 
 enum MapFeatureTypes {
@@ -98,7 +40,7 @@ const N_CIRLCES = 1;
 const N_CIRCLE_OUTLINES = 5;
 
 export default function GameMap({
-  guesses = [], onReady, showMap = false, target, projection,
+  guesses = [], onReady, showMap = false, target, projection, foundCountry,
 }: GameMapProps): JSX.Element {
   const [, causeRefresh] = React.useState<null | undefined>();
 
@@ -108,7 +50,21 @@ export default function GameMap({
   const mapRef = React.useRef<Map | null>(null);
   const mapElement = React.useRef<HTMLDivElement | null>(null);
   const prevMap = usePrevious(mapRef.current);
+  const prevFoundCountry = usePrevious(foundCountry);
   const mapReady = mapRef.current !== prevMap;
+
+  React.useEffect(() => {
+    if (foundCountry !== undefined && prevFoundCountry === undefined) {
+      const view = mapRef.current?.getView();
+      view?.fit(
+        new Polygon(foundCountry.coordinates),
+        {
+          padding: [100, 20, 20, 20],
+          duration: 1000,
+        },
+      );
+    }
+  }, [foundCountry, prevFoundCountry]);
 
   React.useEffect(() => {
     if (mapReady) onReady();

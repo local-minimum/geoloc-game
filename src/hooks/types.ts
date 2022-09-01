@@ -50,6 +50,11 @@ export function asCity(guessOption: GuessOption | undefined): City {
   throw new Error('not a city');
 }
 
+export function asCountry(guessOption: GuessOption | undefined): Country {
+  if (isCountry(guessOption)) return guessOption;
+  throw new Error('not a country');
+}
+
 export function isSame(guessOption: GuessOption, target: GuessOption | undefined): boolean {
   if (target === undefined) return false;
   if (guessOption.name !== target.name) return false;
