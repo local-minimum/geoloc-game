@@ -43,6 +43,8 @@ export function HowToPlay({
           If you guess a country it will be drawn out which can help understanding
           distances on the map.
           If the country you guessed is the correct one it will get a distinct color.
+          And for each erroneous city guess hence on cities in that country will
+          remove half of the remaining cities.
         </Typography>
         <Typography gutterBottom>
           The map starts out completely blank and will remain so until you

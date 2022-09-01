@@ -14,6 +14,7 @@ import GuessInputOption from './GuessInputOption';
 interface UserHudProps {
   options: GuessOption[],
   guesses: GuessOption[],
+  assists: City[],
   target: City | undefined,
   onGuess: (guess: GuessOption) => void,
   onGiveUp: () => void;
@@ -37,7 +38,7 @@ function guessName(option: GuessOption): string {
 const maxOptions = 30;
 
 export default function UserHud({
-  options, onGuess, guesses, target, solved, foundCountry, onGiveUp,
+  options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const guess = last(guesses);
@@ -64,7 +65,8 @@ export default function UserHud({
           clearOnBlur
           clearOnEscape
           getOptionDisabled={
-            (option: GuessOption) => guesses.some((g) => guessName(g) === guessName(option))
+            (option: GuessOption) => guesses.some((g) => isSame(option, g))
+              || assists.some((ass) => isSame(option, ass))
           }
           onChange={(_, option) => option !== null && onGuess(option)}
           onInputChange={(_, value, reason) => {
@@ -132,7 +134,7 @@ export default function UserHud({
           {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
           {guess && (
             <Typography>
-              {solved ? `Found it! It was ${target?.name ?? ''}` : `Most Recent guess: ${guess.name}`}
+              {solved ? `Found it! It was ${target?.name ?? ''} of ${target?.country ?? 'no country'}` : `Most Recent guess: ${guess.name}`}
             </Typography>
           )}
         </Stack>

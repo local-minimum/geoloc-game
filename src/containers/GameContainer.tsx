@@ -1,9 +1,12 @@
 import { Box } from '@mui/material';
+import { sampleSize } from 'lodash';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
 import { HowToPlay } from '../components/HowToPlay';
 import UserHud from '../components/UserHud';
-import { GuessOption, isCountry, isSame } from '../hooks/types';
+import {
+  asCity, City, GuessOption, isCity, isCountry, isSame,
+} from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
 
 const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
@@ -18,6 +21,7 @@ export default function GameContainer(): JSX.Element {
   const [guesses, setGuesses] = React.useState<GuessOption[]>([]);
   const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
   const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
+  const [assistGuesses, setAssistGuesses] = React.useState<City[]>([]);
 
   const handleAddGuess = React.useCallback((guess: GuessOption) => {
     if (target === undefined) return;
@@ -27,8 +31,22 @@ export default function GameContainer(): JSX.Element {
     if (isCountry(guess) && target.country === guess.name) {
       setFoundCountry(true);
     }
+
+    if (isCity(guess) && foundCountry && guess.country === target.country) {
+      const unguessed = guessOptions
+        .filter(isCity)
+        .map(asCity)
+        .filter((city) => city.country === target.country && !isSame(city, target))
+        .filter((city) => !guesses.some((g) => isSame(city, g)));
+      const removals = sampleSize(
+        unguessed,
+        unguessed.length < 4 ? 0 : Math.floor(unguessed.length / 2),
+      );
+      setAssistGuesses([...assistGuesses, ...removals]);
+    }
+
     setGuesses([...guesses, guess]);
-  }, [guesses, target]);
+  }, [assistGuesses, foundCountry, guessOptions, guesses, target]);
 
   const handleSurrender = React.useCallback(() => {
     if (target === undefined) return;
@@ -55,6 +73,7 @@ export default function GameContainer(): JSX.Element {
         onGuess={handleAddGuess}
         onGiveUp={handleSurrender}
         guesses={guesses}
+        assists={assistGuesses}
         target={target}
         solved={solvedIt}
         foundCountry={foundCountry}

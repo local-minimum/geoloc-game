@@ -51,8 +51,8 @@ const cityStyle = new Style({
   }),
   text: new Text({
     placement: 'point',
-    fill: new Fill({ color: '#ec957d' }),
-    stroke: new Stroke({ color: '#ec957d', width: 1 }),
+    fill: new Fill({ color: '#222' }),
+    stroke: new Stroke({ color: '#333', width: 1 }),
     offsetY: -12,
   }),
 });
