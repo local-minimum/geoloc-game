@@ -12,45 +12,48 @@ import { useGuessOptions } from '../hooks/useGuessOptions';
 
 const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
 
-export default function GameContainer(): JSX.Element {
+export default function GameContainer(): JSX.Element | null {
   const { enqueueSnackbar } = useSnackbar();
   const [mapLoaded, setMapLoaded] = React.useState(false);
   const handleMapReady = React.useCallback(() => {
     if (!mapLoaded) setMapLoaded(true);
   }, [mapLoaded]);
 
-  const [guessOptions, target] = useGuessOptions(MAP_PROJ);
+  const [guessOptions, rndTarget] = useGuessOptions(MAP_PROJ);
   const [guesses, setGuesses] = React.useState<GuessOption[]>([]);
   const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
   const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
   const [assistGuesses, setAssistGuesses] = React.useState<City[]>([]);
   const [surrender, setSurrender] = React.useState(false);
+  const [target, setTarget] = React.useState<City | null>(null);
+
+  const liveTarget = target ?? rndTarget;
 
   const targetCountry = React.useMemo<Country | undefined>(
     () => {
-      const c = guessOptions.find((opt) => isCountry(opt) && opt.name === target.country);
+      const c = guessOptions.find((opt) => isCountry(opt) && opt.name === liveTarget?.country);
       if (c === undefined) return undefined;
       return asCountry(c);
     },
-    [guessOptions, target.country],
+    [guessOptions, liveTarget?.country],
   );
 
   const handleAddGuess = React.useCallback((guess: GuessOption) => {
-    if (target === undefined) return;
-    if (isSame(guess, target)) {
+    if (liveTarget == null) return;
+    if (isSame(guess, liveTarget)) {
       setSolvedIt(true);
       enqueueSnackbar('Congratulations!', { variant: 'success' });
     }
-    if (isCountry(guess) && target.country === guess.name) {
+    if (isCountry(guess) && liveTarget?.country === guess.name) {
       setFoundCountry(true);
       enqueueSnackbar('You found the correct country', { variant: 'success' });
     }
 
-    if (isCity(guess) && foundCountry && guess.country === target.country) {
+    if (isCity(guess) && foundCountry && guess.country === liveTarget?.country) {
       const unguessed = guessOptions
         .filter(isCity)
         .map(asCity)
-        .filter((city) => city.country === target.country && !isSame(city, target))
+        .filter((city) => city.country === liveTarget.country && !isSame(city, liveTarget))
         .filter((city) => !guesses.some((g) => isSame(city, g)));
       const removals = sampleSize(
         unguessed,
@@ -60,15 +63,29 @@ export default function GameContainer(): JSX.Element {
     }
 
     setGuesses([...guesses, guess]);
-  }, [assistGuesses, enqueueSnackbar, foundCountry, guessOptions, guesses, target]);
+  }, [assistGuesses, enqueueSnackbar, foundCountry, guessOptions, guesses, liveTarget]);
 
   const handleSurrender = React.useCallback(() => {
-    if (target === undefined) return;
+    if (liveTarget == null) return;
     setSolvedIt(true);
-    setGuesses([...guesses, target]);
+    setGuesses([...guesses, liveTarget]);
     setSurrender(true);
     enqueueSnackbar('Better luck next time', { variant: 'info' });
-  }, [enqueueSnackbar, guesses, target]);
+  }, [enqueueSnackbar, guesses, liveTarget]);
+
+  React.useEffect(() => {
+    const challenge = new URLSearchParams(window.location.search).get('challenge');
+    if (challenge !== null) {
+      const rawCity = atob(challenge);
+      const parsedCity = JSON.parse(rawCity.toString());
+      if (isCity(parsedCity)) {
+        setTarget(asCity(parsedCity));
+      }
+      window.history.replaceState(null, '', window.location.href.split('?')[0]);
+    }
+  }, []);
+
+  if (liveTarget == null) return null;
 
   return (
     <Box
@@ -81,8 +98,8 @@ export default function GameContainer(): JSX.Element {
         projection={MAP_PROJ}
         guesses={guesses}
         onReady={handleMapReady}
-        target={target}
-        showMap={guesses.some((guess) => isSame(guess, target))}
+        target={liveTarget}
+        showMap={guesses.some((guess) => isSame(guess, liveTarget))}
         foundCountry={foundCountry ? targetCountry : undefined}
       />
       <UserHud
@@ -91,10 +108,11 @@ export default function GameContainer(): JSX.Element {
         onGiveUp={handleSurrender}
         guesses={guesses}
         assists={assistGuesses}
-        target={target}
+        target={liveTarget}
         solved={solvedIt}
         foundCountry={foundCountry}
         surrender={surrender}
+        playingChallenge={target != null}
       />
       <HowToPlay />
     </Box>

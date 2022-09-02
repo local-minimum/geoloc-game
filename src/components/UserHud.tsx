@@ -26,12 +26,14 @@ interface UserHudProps {
   solved: boolean;
   foundCountry: boolean;
   surrender: boolean;
+  playingChallenge: boolean;
 }
 
 const maxOptions = 30;
 
 export default function UserHud({
   options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists, surrender,
+  playingChallenge,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const [showVictory, setShowVictory] = React.useState(true);
@@ -179,6 +181,7 @@ export default function UserHud({
         </Stack>
       </Stack>
       <Victory
+        playingChallenge={playingChallenge}
         open={solved && !surrender && showVictory}
         onClose={() => setShowVictory(false)}
         target={target}

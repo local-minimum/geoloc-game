@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Map from 'ol/Map';
-import { Box } from '@mui/material';
+import { alpha, Box } from '@mui/material';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import View from 'ol/View';
@@ -95,6 +95,7 @@ export default function GameMap({
       citiesSource.current.addFeatures(cityFeatures);
 
       const withinFeatures = cities
+        .filter((city) => !isSame(city, target))
         .slice(Math.max(0, cities.length - (N_CIRLCES + N_CIRCLE_OUTLINES)))
         .map((city, idx, arr) => {
           const { coordinates } = city;
@@ -102,11 +103,14 @@ export default function GameMap({
           const featureType = idx < (arr.length - N_CIRLCES)
             ? MapFeatureTypes.WithinBorder
             : MapFeatureTypes.WithinArea;
+          const distance = target == null ? 0 : getMapDistance(city, target);
 
           return new Feature({
             geometry: new Point(mapCoords),
             featureType,
             city,
+            age: arr.length - idx,
+            distance,
           });
         });
       citiesSource.current.addFeatures(withinFeatures);
@@ -125,7 +129,7 @@ export default function GameMap({
       });
       countriesSource.current?.addFeatures(countryFeatures);
     }
-  }, [guesses, mapReady, projection]);
+  }, [guesses, mapReady, projection, target]);
 
   React.useEffect(() => {
     if (mapRef.current !== null || target === undefined) {
@@ -168,22 +172,20 @@ export default function GameMap({
           case MapFeatureTypes.WithinArea:
             // eslint-disable-next-line no-case-declarations
             const style = withAreaStyle.clone();
-            // eslint-disable-next-line no-case-declarations
-            const r = getMapDistance(
-              feature.get('city') as City,
-              target,
-            );
             (style.getImage() as CircleStyle).setRadius(
-              r * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2),
+              (feature.get('distance') as number) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2),
             );
             return style;
           case MapFeatureTypes.WithinBorder:
             // eslint-disable-next-line no-case-declarations
             const style2 = withBorderStyle.clone();
-            (style2.getImage() as CircleStyle).setRadius(getMapDistance(
-              feature.get('city') as City,
-              target,
-            ) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
+            // eslint-disable-next-line no-case-declarations
+            const img = (style2.getImage() as CircleStyle);
+            img.getStroke()?.setColor(alpha(
+              '#222',
+              0.7 - (feature.get('age') as number) / (2 * (N_CIRCLE_OUTLINES + N_CIRLCES)),
+            ));
+            img.setRadius((feature.get('distance') as number) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
             return style2;
           default:
             return undefined;

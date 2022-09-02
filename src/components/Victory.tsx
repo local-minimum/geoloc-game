@@ -20,6 +20,7 @@ interface VictoryProps {
   start?: GuessOption,
   target?: City,
   onNewGame: () => void;
+  playingChallenge: boolean;
 }
 
 const sx = {
@@ -27,12 +28,23 @@ const sx = {
 };
 
 export default function Victory({
-  open, onClose, cities, countries, start, target, onNewGame,
+  open, onClose, cities, countries, start, target, onNewGame, playingChallenge,
 }: VictoryProps): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
 
   const handleBrag = () => {
-    const msg = `I found my way from ${start?.name} to ${target?.name} using ${cities} 🏙️ and ${countries} 🏳️`;
+    const msg = playingChallenge
+      ? `I found the challenge target using ${cities} 🏙️ and ${countries} 🏳️`
+      : `I found my way from ${start?.name} to ${target?.name} using ${cities} 🏙️ and ${countries} 🏳️`;
+    navigator.clipboard.writeText(msg);
+    enqueueSnackbar('Copied message to clipboard', { variant: 'info' });
+  };
+
+  const handleChallenge = () => {
+    const s = JSON.stringify(target);
+    const chall = btoa(s);
+    const url = `${window.location.href.split('?')[0]}?challenge=${chall}`;
+    const msg = `I found my way to this goal using ${cities} 🏙️ and ${countries} 🏳️: ${url}`;
     navigator.clipboard.writeText(msg);
     enqueueSnackbar('Copied message to clipboard', { variant: 'info' });
   };
@@ -73,8 +85,7 @@ export default function Victory({
         </Button>
         <Button
           variant="outlined"
-          onClick={() => { /* no-op */ }}
-          disabled
+          onClick={handleChallenge}
           startIcon={<FontAwesomeIcon icon={faPeopleArrows} />}
         >
           Challange
