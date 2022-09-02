@@ -1,4 +1,5 @@
 import {
+  faCirclePlay,
   faCity, faDoorClosed, faFlag, faMedal,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -38,6 +39,48 @@ export default function UserHud({
   const guess = last(guesses);
   const cities = guesses.filter(isCity).length;
   const countries = guesses.length - cities;
+
+  const handleNewGame = () => {
+    window.location.reload();
+  };
+
+  const actionButton = (): JSX.Element => {
+    if (solved && !surrender) {
+      return (
+        <Button
+          disabled={showVictory}
+          startIcon={<FontAwesomeIcon icon={faMedal} />}
+          onClick={() => setShowVictory(true)}
+          variant="outlined"
+        >
+          Show victory
+        </Button>
+      );
+    }
+    if (surrender) {
+      return (
+        <Button
+          variant="outlined"
+          onClick={handleNewGame}
+          startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
+        >
+          New Game
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        disabled={solved}
+        startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
+        onClick={onGiveUp}
+        variant="outlined"
+      >
+        Give up
+      </Button>
+    );
+  };
+
   return (
     <Paper
       elevation={2}
@@ -125,25 +168,7 @@ export default function UserHud({
             <FontAwesomeIcon icon={faFlag} size="2x" />
           </Badge>
         </Tooltip>
-        {solved && !surrender ? (
-          <Button
-            disabled={showVictory}
-            startIcon={<FontAwesomeIcon icon={faMedal} />}
-            onClick={() => setShowVictory(true)}
-            variant="outlined"
-          >
-            Show victory
-          </Button>
-        ) : (
-          <Button
-            disabled={solved}
-            startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
-            onClick={onGiveUp}
-            variant="outlined"
-          >
-            Give up
-          </Button>
-        )}
+        {actionButton()}
         <Stack>
           {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
           {guess && (
@@ -160,6 +185,7 @@ export default function UserHud({
         start={start}
         cities={cities}
         countries={countries}
+        onNewGame={handleNewGame}
       />
     </Paper>
   );

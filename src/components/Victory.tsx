@@ -19,6 +19,7 @@ interface VictoryProps {
   countries: number,
   start?: GuessOption,
   target?: City,
+  onNewGame: () => void;
 }
 
 const sx = {
@@ -26,7 +27,7 @@ const sx = {
 };
 
 export default function Victory({
-  open, onClose, cities, countries, start, target,
+  open, onClose, cities, countries, start, target, onNewGame,
 }: VictoryProps): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -34,10 +35,6 @@ export default function Victory({
     const msg = `I found my way from ${start?.name} to ${target?.name} using ${cities} 🏙️ and ${countries} 🏳️`;
     navigator.clipboard.writeText(msg);
     enqueueSnackbar('Copied message to clipboard', { variant: 'info' });
-  };
-
-  const handleNewGame = () => {
-    window.location.reload();
   };
 
   return (
@@ -84,7 +81,7 @@ export default function Victory({
         </Button>
         <Button
           variant="outlined"
-          onClick={handleNewGame}
+          onClick={onNewGame}
           startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
         >
           New Game
