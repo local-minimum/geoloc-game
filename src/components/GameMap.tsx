@@ -173,7 +173,7 @@ export default function GameMap({
             // eslint-disable-next-line no-case-declarations
             const style = withAreaStyle.clone();
             (style.getImage() as CircleStyle).setRadius(
-              (feature.get('distance') as number) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2),
+              (feature.get('distance') as number) * (2 ** (mapRef.current?.getView()?.getZoom() ?? 1)),
             );
             return style;
           case MapFeatureTypes.WithinBorder:
@@ -185,7 +185,7 @@ export default function GameMap({
               '#222',
               0.7 - (feature.get('age') as number) / (2 * (N_CIRCLE_OUTLINES + N_CIRLCES)),
             ));
-            img.setRadius((feature.get('distance') as number) * ((mapRef.current?.getView()?.getZoom() ?? 1) ** 2));
+            img.setRadius((feature.get('distance') as number) * (2 ** (mapRef.current?.getView()?.getZoom() ?? 1)));
             return style2;
           default:
             return undefined;

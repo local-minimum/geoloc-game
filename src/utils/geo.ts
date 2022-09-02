@@ -18,28 +18,28 @@ export function getMapDistance(
 
   if (Math.abs(fromLon - toLon) > 180) {
     if (fromLon < toLon) {
-      return Math.ceil(new LineString(
+      return new LineString(
         [
           [fromLon + 360, fromLat],
           [toLon, toLat],
         ],
         'XY',
-      ).getLength());
+      ).getLength();
     }
 
-    return Math.ceil(new LineString(
+    return new LineString(
       [
         [fromLon, fromLat],
         [toLon + 360, toLat],
       ],
       'XY',
-    ).getLength());
+    ).getLength();
   }
 
-  return Math.ceil(new LineString(
+  return new LineString(
     [city.coordinates, target.coordinates],
     'XY',
-  ).getLength());
+  ).getLength();
 }
 
 export function deepFromLonLat(coordinates: AnyCoordinate, proj: ProjectionLike): AnyCoordinate {
