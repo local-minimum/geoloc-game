@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import { sampleSize } from 'lodash';
+import { useSnackbar } from 'notistack';
 import * as React from 'react';
 import GameMap from '../components/GameMap';
 import { HowToPlay } from '../components/HowToPlay';
@@ -12,6 +13,7 @@ import { useGuessOptions } from '../hooks/useGuessOptions';
 const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
 
 export default function GameContainer(): JSX.Element {
+  const { enqueueSnackbar } = useSnackbar();
   const [mapLoaded, setMapLoaded] = React.useState(false);
   const handleMapReady = React.useCallback(() => {
     if (!mapLoaded) setMapLoaded(true);
@@ -22,6 +24,7 @@ export default function GameContainer(): JSX.Element {
   const [solvedIt, setSolvedIt] = React.useState<boolean>(false);
   const [foundCountry, setFoundCountry] = React.useState<boolean>(false);
   const [assistGuesses, setAssistGuesses] = React.useState<City[]>([]);
+  const [surrender, setSurrender] = React.useState(false);
 
   const targetCountry = React.useMemo<Country | undefined>(
     () => {
@@ -36,9 +39,11 @@ export default function GameContainer(): JSX.Element {
     if (target === undefined) return;
     if (isSame(guess, target)) {
       setSolvedIt(true);
+      enqueueSnackbar('Congratulations!', { variant: 'success' });
     }
     if (isCountry(guess) && target.country === guess.name) {
       setFoundCountry(true);
+      enqueueSnackbar('You found the correct country', { variant: 'success' });
     }
 
     if (isCity(guess) && foundCountry && guess.country === target.country) {
@@ -55,13 +60,15 @@ export default function GameContainer(): JSX.Element {
     }
 
     setGuesses([...guesses, guess]);
-  }, [assistGuesses, foundCountry, guessOptions, guesses, target]);
+  }, [assistGuesses, enqueueSnackbar, foundCountry, guessOptions, guesses, target]);
 
   const handleSurrender = React.useCallback(() => {
     if (target === undefined) return;
     setSolvedIt(true);
     setGuesses([...guesses, target]);
-  }, [guesses, target]);
+    setSurrender(true);
+    enqueueSnackbar('Better luck next time', { variant: 'info' });
+  }, [enqueueSnackbar, guesses, target]);
 
   return (
     <Box
@@ -87,6 +94,7 @@ export default function GameContainer(): JSX.Element {
         target={target}
         solved={solvedIt}
         foundCountry={foundCountry}
+        surrender={surrender}
       />
       <HowToPlay />
     </Box>

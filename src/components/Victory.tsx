@@ -7,6 +7,7 @@ import {
   faHandPeace, faClose, faCirclePlay, faPeopleArrows,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useSnackbar } from 'notistack';
 import { City, GuessOption } from '../hooks/types';
 import { guessName } from '../utils/text';
 import { pluralize } from '../utils/plural';
@@ -27,9 +28,12 @@ const sx = {
 export default function Victory({
   open, onClose, cities, countries, start, target,
 }: VictoryProps): JSX.Element {
+  const { enqueueSnackbar } = useSnackbar();
+
   const handleBrag = () => {
     const msg = `I found my way from ${start?.name} to ${target?.name} using ${cities} 🏙️ and ${countries} 🏳️`;
     navigator.clipboard.writeText(msg);
+    enqueueSnackbar('Copied message to clipboard', { variant: 'info' });
   };
 
   const handleNewGame = () => {

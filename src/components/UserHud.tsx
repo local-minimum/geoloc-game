@@ -24,12 +24,13 @@ interface UserHudProps {
   onGiveUp: () => void;
   solved: boolean;
   foundCountry: boolean;
+  surrender: boolean;
 }
 
 const maxOptions = 30;
 
 export default function UserHud({
-  options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists,
+  options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists, surrender,
 }: UserHudProps): JSX.Element {
   const [inputValue, setInputValue] = React.useState('');
   const [showVictory, setShowVictory] = React.useState(true);
@@ -124,7 +125,7 @@ export default function UserHud({
             <FontAwesomeIcon icon={faFlag} size="2x" />
           </Badge>
         </Tooltip>
-        {solved ? (
+        {solved && !surrender ? (
           <Button
             disabled={showVictory}
             startIcon={<FontAwesomeIcon icon={faMedal} />}
@@ -147,13 +148,13 @@ export default function UserHud({
           {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
           {guess && (
             <Typography>
-              {solved ? `Found it! It was ${target?.name ?? ''} of ${target?.country ?? 'no country'}` : `Most Recent guess: ${guess.name}`}
+              {solved ? `${surrender ? '' : 'Found it! '}It was ${target?.name ?? ''} of ${target?.country ?? 'no country'}` : `Most Recent guess: ${guess.name}`}
             </Typography>
           )}
         </Stack>
       </Stack>
       <Victory
-        open={solved && showVictory}
+        open={solved && !surrender && showVictory}
         onClose={() => setShowVictory(false)}
         target={target}
         start={start}
