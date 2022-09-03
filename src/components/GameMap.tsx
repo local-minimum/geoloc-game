@@ -27,9 +27,10 @@ interface GameMapProps {
   guesses?: GuessOption[];
   target?: City;
   onReady: () => void;
-  showMap?: boolean,
-  projection: string,
-  foundCountry?: Country,
+  showMap?: boolean;
+  projection: string;
+  foundCountry?: Country;
+  solved: boolean;
 }
 
 enum MapFeatureTypes {
@@ -42,7 +43,7 @@ const N_CIRLCES = 1;
 const N_CIRCLE_OUTLINES = 5;
 
 export default function GameMap({
-  guesses = [], onReady, showMap = false, target, projection, foundCountry,
+  guesses = [], onReady, showMap = false, target, projection, foundCountry, solved,
 }: GameMapProps): JSX.Element {
   const [, causeRefresh] = React.useState<null | undefined>();
   const countriesSource = React.useRef<VectorSource | null>(null);
@@ -134,7 +135,7 @@ export default function GameMap({
     }
 
     const countries = guesses.filter((guess) => isCountry(guess)) as Country[];
-    if (countries.length !== countriesSource.current?.getFeatures().length) {
+    if (countries.length !== countriesSource.current?.getFeatures().length || solved) {
       countriesSource.current?.clear();
 
       const countryFeatures = countries.map((country) => {
@@ -143,11 +144,12 @@ export default function GameMap({
           geometry: new Polygon(coordinates),
           country,
           correctCountry: target?.country === country.name,
+          transparency: solved ? 0.6 : 1,
         });
       });
       countriesSource.current?.addFeatures(countryFeatures);
     }
-  }, [guesses, mapReady, projection, target]);
+  }, [guesses, mapReady, projection, target, solved]);
 
   React.useEffect(() => {
     if (mapRef.current !== null) {
@@ -161,9 +163,9 @@ export default function GameMap({
       style: function styleFeature(feature) {
         const fill = countryStyle.getFill();
         if (feature.get('correctCountry')) {
-          fill.setColor('#d8ecde');
+          fill.setColor(alpha('#d8ecde', feature.get('transparency')));
         } else {
-          fill.setColor('#438db6');
+          fill.setColor(alpha('#438db6', feature.get('transparency')));
         }
         return countryStyle;
       },

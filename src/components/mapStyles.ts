@@ -13,9 +13,10 @@ import CircleStyle from 'ol/style/Circle';
 #c3c3a8
 */
 
+const countryFillColor = '#438db6';
 export const countryStyle = new Style({
   zIndex: 10,
-  fill: new Fill({ color: '#438db6' }),
+  fill: new Fill({ color: countryFillColor }),
   stroke: new Stroke({
     color: '#c2ddd0',
     width: 1,

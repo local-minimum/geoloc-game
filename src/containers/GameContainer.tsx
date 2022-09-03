@@ -112,6 +112,7 @@ export default function GameContainer(): JSX.Element | null {
         target={liveTarget}
         showMap={guesses.some((guess) => isSame(guess, liveTarget))}
         foundCountry={foundCountry ? targetCountry : undefined}
+        solved={solvedIt}
       />
       <UserHud
         options={guessOptions}
