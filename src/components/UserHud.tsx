@@ -10,6 +10,7 @@ import { Stack } from '@mui/system';
 import { first, last } from 'lodash';
 import * as React from 'react';
 import {
+  asCity,
   City, GuessOption, isCity, isSame,
 } from '../hooks/types';
 import { guessName } from '../utils/text';
@@ -130,10 +131,16 @@ export default function UserHud({
             const hits = candidates
               .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower
                 || name.toLowerCase().split(/[ -']/).filter((w) => words.includes(w)).length === words.length);
-            const sorter = (a: GuessOption, b: GuessOption) => ((
-              (guesses.some((g) => isSame(g, a)) || assists.some((ass) => isSame(ass, a)))
-              && !(guesses.some((g) => isSame(g, b) || assists.some((ass) => isSame(ass, b))))
-            ) ? 1 : -1);
+            const sorter = (a: GuessOption, b: GuessOption) => (
+              ( // Promote those that are not yet guessed
+                (guesses.some((g) => isSame(g, a)) || assists.some((ass) => isSame(ass, a)))
+                && !(guesses.some((g) => isSame(g, b) || assists.some((ass) => isSame(ass, b))))
+              ) || ( // Promote those in target country if found
+                foundCountry
+                  && isCity(a) && asCity(a).country === target?.country
+                  && !(isCity(b) && asCity(b).country === target?.country)
+              )
+                ? 1 : 0);
 
             if (hits.length > 0) {
               return [

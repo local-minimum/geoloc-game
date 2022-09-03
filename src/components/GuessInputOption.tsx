@@ -1,6 +1,8 @@
-import { faCity, faFlag } from '@fortawesome/free-solid-svg-icons';
+import { faCity, faFlag, faStar } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Stack, Typography } from '@mui/material';
+import {
+  Badge, ListItemIcon, Stack, Typography,
+} from '@mui/material';
 import * as React from 'react';
 import {
   City, Country, GuessOption, isCity, isCountry,
@@ -13,9 +15,18 @@ interface RenderCityOptionProps {
 function RenderCityOption({ city }: RenderCityOptionProps): JSX.Element {
   return (
     <Stack>
-      <Typography>
-        <FontAwesomeIcon icon={faCity} />
-        {' '}
+      <Typography component="span">
+        <ListItemIcon>
+          {city.capital ? (
+            <Badge
+              badgeContent={<FontAwesomeIcon icon={faStar} size="xs" color="red" />}
+            >
+              <FontAwesomeIcon icon={faCity} color="black" />
+            </Badge>
+          ) : (
+            <FontAwesomeIcon icon={faCity} color="black" />
+          )}
+        </ListItemIcon>
         {city.name}
       </Typography>
       <Typography variant="caption">
@@ -33,9 +44,10 @@ interface RenderCountryProps {
 
 function RenderCountry({ country }: RenderCountryProps): JSX.Element {
   return (
-    <Typography textTransform="uppercase">
-      <FontAwesomeIcon icon={faFlag} />
-      {' '}
+    <Typography textTransform="uppercase" component="span">
+      <ListItemIcon>
+        <FontAwesomeIcon icon={faFlag} color="black" />
+      </ListItemIcon>
       {country.name}
     </Typography>
   );
