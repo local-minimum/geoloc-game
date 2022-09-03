@@ -1,9 +1,5 @@
 import {
-  faCity, faFlag,
-} from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Badge, Paper, Tooltip, Typography, useMediaQuery,
+  Paper, Typography, useMediaQuery,
 } from '@mui/material';
 import { Stack, useTheme } from '@mui/system';
 import { first, last } from 'lodash';
@@ -12,6 +8,7 @@ import {
   City, GuessOption, isCity,
 } from '../hooks/types';
 import ActionButton from './ActionButton';
+import GameProgress from './GameProgress';
 import GuessInput from './GuessInput';
 import Victory from './Victory';
 
@@ -65,16 +62,11 @@ export default function UserHud({
           onGuess={onGuess}
           onGiveUp={onGiveUp}
         />
-        <Tooltip title="City guesses">
-          <Badge badgeContent={cities} color="primary">
-            <FontAwesomeIcon icon={faCity} size="2x" />
-          </Badge>
-        </Tooltip>
-        <Tooltip title="Country guesses">
-          <Badge badgeContent={countries} color="secondary">
-            <FontAwesomeIcon icon={faFlag} size="2x" />
-          </Badge>
-        </Tooltip>
+        <GameProgress
+          isSmall={isSmall}
+          cities={cities}
+          countries={countries}
+        />
         <ActionButton
           isSmall={isSmall}
           solved={solved}
