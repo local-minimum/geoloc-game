@@ -88,6 +88,7 @@ export default function UserHud({
         )}
       </Stack>
       <Victory
+        isSmall={isSmall}
         playingChallenge={playingChallenge}
         open={solved && !surrender && showVictory}
         onClose={() => setShowVictory(false)}
