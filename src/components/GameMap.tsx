@@ -12,7 +12,9 @@ import { Feature } from 'ol';
 import { Point, Polygon } from 'ol/geom';
 import { fromLonLat } from 'ol/proj';
 import CircleStyle from 'ol/style/Circle';
+import { last } from 'lodash';
 import {
+  asCity,
   City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import usePrevious from '../hooks/usePrevious';
@@ -43,7 +45,6 @@ export default function GameMap({
   guesses = [], onReady, showMap = false, target, projection, foundCountry,
 }: GameMapProps): JSX.Element {
   const [, causeRefresh] = React.useState<null | undefined>();
-
   const countriesSource = React.useRef<VectorSource | null>(null);
   const citiesSource = React.useRef<VectorSource | null>(null);
   const tileLayer = React.useRef<TileLayer<XYZ> | null>(null);
@@ -53,9 +54,14 @@ export default function GameMap({
   const prevFoundCountry = usePrevious(foundCountry);
   const mapReady = mapRef.current !== prevMap;
 
+  const lastGuess = last(guesses);
+  const isTarget = isSame(lastGuess, target);
+  const wasTarget = usePrevious(isTarget);
+
   React.useEffect(() => {
+    const view = mapRef.current?.getView();
+
     if (foundCountry !== undefined && prevFoundCountry === undefined) {
-      const view = mapRef.current?.getView();
       view?.fit(
         new Polygon(foundCountry.coordinates),
         {
@@ -63,8 +69,18 @@ export default function GameMap({
           duration: 1000,
         },
       );
+    } else if (isTarget && !wasTarget) {
+      const lastCity = asCity(lastGuess);
+      view?.fit(
+        new Point(fromLonLat(lastCity.coordinates)).getExtent(),
+        {
+          padding: [100, 20, 20, 20],
+          duration: 1000,
+          maxZoom: 6,
+        },
+      );
     }
-  }, [foundCountry, prevFoundCountry]);
+  }, [foundCountry, isTarget, lastGuess, prevFoundCountry, wasTarget]);
 
   React.useEffect(() => {
     if (mapReady) onReady();
@@ -89,7 +105,8 @@ export default function GameMap({
         return new Feature({
           geometry: new Point(mapCoords),
           featureType: MapFeatureTypes.CityGuess,
-          city,
+          name: city.name,
+          isTarget: isSame(city, target),
         });
       });
       citiesSource.current.addFeatures(cityFeatures);
@@ -125,6 +142,7 @@ export default function GameMap({
         return new Feature({
           geometry: new Polygon(coordinates),
           country,
+          correctCountry: target?.country === country.name,
         });
       });
       countriesSource.current?.addFeatures(countryFeatures);
@@ -132,7 +150,7 @@ export default function GameMap({
   }, [guesses, mapReady, projection, target]);
 
   React.useEffect(() => {
-    if (mapRef.current !== null || target === undefined) {
+    if (mapRef.current !== null) {
       return;
     }
     const countryVectorSource = new VectorSource();
@@ -142,7 +160,7 @@ export default function GameMap({
       zIndex: 10,
       style: function styleFeature(feature) {
         const fill = countryStyle.getFill();
-        if ((feature.get('country') as Country).name === target.country) {
+        if (feature.get('correctCountry')) {
           fill.setColor('#d8ecde');
         } else {
           fill.setColor('#438db6');
@@ -158,16 +176,14 @@ export default function GameMap({
       style: function styleFeature(feature) {
         switch (feature.get('featureType') as MapFeatureTypes) {
           case MapFeatureTypes.CityGuess:
-            // eslint-disable-next-line no-case-declarations
-            const city = (feature.get('city') as City);
-            cityStyle.getText()?.setText(city.name);
-            if (isSame(city, target)) {
+            if (feature.get('isTarget')) {
               const targetStyle = cityStyle.clone();
-              targetStyle.getImage()?.setScale(2);
-              targetStyle.getText()?.setOffsetY(-22);
+              targetStyle.getText()?.setText([feature.get('name'), 'bold 16px']);
+              targetStyle.getText()?.setOffsetY(-16);
               targetStyle.getText()?.setScale(2);
               return targetStyle;
             }
+            cityStyle.getText()?.setText(feature.get('name'));
             return cityStyle;
           case MapFeatureTypes.WithinArea:
             // eslint-disable-next-line no-case-declarations
@@ -215,7 +231,7 @@ export default function GameMap({
       cityVectorLayer.changed();
     });
     causeRefresh(null);
-  }, [showMap, target, projection]);
+  }, [showMap, projection]);
 
   return (
     <Box
