@@ -15,6 +15,7 @@ import CircleStyle from 'ol/style/Circle';
 import { last } from 'lodash';
 import {
   asCity,
+  asCountry,
   City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import usePrevious from '../hooks/usePrevious';
@@ -67,7 +68,7 @@ export default function GameMap({
         new Polygon(foundCountry.coordinates),
         {
           padding: [100, 20, 20, 20],
-          duration: 1000,
+          duration: 300,
         },
       );
     } else if (isTarget && !wasTarget) {
@@ -78,6 +79,28 @@ export default function GameMap({
           padding: [100, 20, 20, 20],
           duration: 1000,
           maxZoom: 6,
+        },
+      );
+    } else if (isCity(lastGuess)) {
+      const lastCity = asCity(lastGuess);
+      const zoom = view?.getZoom();
+      view?.fit(
+        new Point(fromLonLat(lastCity.coordinates)).getExtent(),
+        {
+          padding: [100, 20, 20, 20],
+          duration: 300,
+          maxZoom: zoom,
+        },
+      );
+    } else if (isCountry(lastGuess)) {
+      const lastCountry = asCountry(lastGuess);
+      const zoom = view?.getZoom();
+      view?.fit(
+        new Polygon(lastCountry.coordinates),
+        {
+          padding: [100, 20, 20, 20],
+          duration: 300,
+          maxZoom: zoom,
         },
       );
     }
