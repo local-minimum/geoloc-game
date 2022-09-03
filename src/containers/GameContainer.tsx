@@ -50,16 +50,27 @@ export default function GameContainer(): JSX.Element | null {
     }
 
     if (isCity(guess) && foundCountry && guess.country === liveTarget?.country) {
-      const unguessed = guessOptions
+      const sameCountryGuesses = guesses
         .filter(isCity)
         .map(asCity)
-        .filter((city) => city.country === liveTarget.country && !isSame(city, liveTarget))
-        .filter((city) => !guesses.some((g) => isSame(city, g)));
-      const removals = sampleSize(
-        unguessed,
-        unguessed.length < 4 ? 0 : Math.floor(unguessed.length / 2),
-      );
-      setAssistGuesses([...assistGuesses, ...removals]);
+        .filter((city) => city.country === liveTarget.country);
+
+      if (sameCountryGuesses.length > 1) {
+        const unguessed = guessOptions
+          .filter(isCity)
+          .map(asCity)
+          .filter((city) => city.country === liveTarget.country && !isSame(city, liveTarget))
+          .filter((city) => !(
+            sameCountryGuesses.some((g) => isSame(city, g))
+            || assistGuesses.some((g) => isSame(city, g))
+          ));
+
+        const removals = sampleSize(
+          unguessed,
+          unguessed.length < 4 ? 0 : Math.floor(unguessed.length / 2),
+        );
+        setAssistGuesses([...assistGuesses, ...removals]);
+      }
     }
 
     setGuesses([...guesses, guess]);

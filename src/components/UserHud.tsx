@@ -4,17 +4,15 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Autocomplete, Badge, Button, Paper, TextField, Tooltip, Typography,
+  Badge, Button, Paper, Tooltip, Typography,
 } from '@mui/material';
 import { Stack } from '@mui/system';
 import { first, last } from 'lodash';
 import * as React from 'react';
 import {
-  asCity,
-  City, GuessOption, isCity, isSame,
+  City, GuessOption, isCity,
 } from '../hooks/types';
-import { guessName } from '../utils/text';
-import GuessInputOption from './GuessInputOption';
+import GuessInput from './GuessInput';
 import Victory from './Victory';
 
 interface UserHudProps {
@@ -30,13 +28,10 @@ interface UserHudProps {
   playingChallenge: boolean;
 }
 
-const maxOptions = 30;
-
 export default function UserHud({
   options, onGuess, guesses, target, solved, foundCountry, onGiveUp, assists, surrender,
   playingChallenge,
 }: UserHudProps): JSX.Element {
-  const [inputValue, setInputValue] = React.useState('');
   const [showVictory, setShowVictory] = React.useState(true);
   const start = first(guesses);
   const guess = last(guesses);
@@ -96,76 +91,14 @@ export default function UserHud({
       }}
     >
       <Stack direction="row" gap={2} alignItems="center">
-        <Autocomplete
-          disabled={target === undefined}
-          size="small"
-          inputValue={inputValue}
-          disablePortal
+        <GuessInput
           options={options}
-          clearOnBlur
-          clearOnEscape
-          getOptionDisabled={
-            (option: GuessOption) => guesses.some((g) => isSame(option, g))
-              || assists.some((ass) => isSame(option, ass))
-          }
-          onChange={(_, option) => option !== null && onGuess(option)}
-          onInputChange={(_, value, reason) => {
-            switch (reason) {
-              case 'input':
-                setInputValue(value);
-                break;
-              case 'clear':
-              case 'reset':
-                setInputValue('');
-                break;
-            }
-          }}
-          filterOptions={(opts, { inputValue: inputVal }) => {
-            const lower = inputVal.toLocaleLowerCase().replace(/ /g, '');
-            const words = inputVal.toLocaleLowerCase().split(/[ -']/);
-
-            if (inputVal.length === 0) return opts.slice(0, maxOptions);
-
-            const candidates = opts
-              .filter((opt) => guessName(opt).toLocaleLowerCase().replace(/ /g, '').includes(lower));
-            const hits = candidates
-              .filter(({ name }) => name.toLowerCase().replace(/ /g, '') === lower
-                || name.toLowerCase().split(/[ -']/).filter((w) => words.includes(w)).length === words.length);
-            const sorter = (a: GuessOption, b: GuessOption) => (
-              ( // Promote those that are not yet guessed
-                (guesses.some((g) => isSame(g, a)) || assists.some((ass) => isSame(ass, a)))
-                && !(guesses.some((g) => isSame(g, b) || assists.some((ass) => isSame(ass, b))))
-              ) || ( // Promote those in target country if found
-                foundCountry
-                  && isCity(a) && asCity(a).country === target?.country
-                  && !(isCity(b) && asCity(b).country === target?.country)
-              )
-                ? 1 : 0);
-
-            if (hits.length > 0) {
-              return [
-                ...hits,
-                ...candidates
-                  .filter((opt) => !hits.some((opt2) => isSame(opt, opt2)))
-                  .sort(sorter)
-                  .slice(0, Math.max(0, maxOptions - hits.length)),
-              ];
-            }
-
-            return candidates.sort(sorter).slice(0, maxOptions);
-          }}
-          getOptionLabel={guessName}
-          sx={{ width: 'min(400px, 80%)' }}
-          // eslint-disable-next-line react/jsx-props-no-spreading
-          renderInput={(params) => <TextField {...params} label="City" autoFocus />}
-          renderOption={(params, opt) => (
-            <li
-              // eslint-disable-next-line react/jsx-props-no-spreading
-              {...params}
-            >
-              <GuessInputOption option={opt} />
-            </li>
-          )}
+          guesses={guesses}
+          assists={assists}
+          target={target}
+          foundCountry={foundCountry}
+          onGuess={onGuess}
+          onGiveUp={onGiveUp}
         />
         <Tooltip title="City guesses">
           <Badge badgeContent={cities} color="primary">
