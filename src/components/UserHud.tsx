@@ -1,17 +1,17 @@
 import {
-  faCirclePlay,
-  faCity, faDoorClosed, faFlag, faMedal,
+  faCity, faFlag,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Badge, Button, Paper, Tooltip, Typography,
+  Badge, Paper, Tooltip, Typography, useMediaQuery,
 } from '@mui/material';
-import { Stack } from '@mui/system';
+import { Stack, useTheme } from '@mui/system';
 import { first, last } from 'lodash';
 import * as React from 'react';
 import {
   City, GuessOption, isCity,
 } from '../hooks/types';
+import ActionButton from './ActionButton';
 import GuessInput from './GuessInput';
 import Victory from './Victory';
 
@@ -37,46 +37,11 @@ export default function UserHud({
   const guess = last(guesses);
   const cities = guesses.filter(isCity).length;
   const countries = guesses.length - cities;
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleNewGame = () => {
     window.location.reload();
-  };
-
-  const actionButton = (): JSX.Element => {
-    if (solved && !surrender) {
-      return (
-        <Button
-          disabled={showVictory}
-          startIcon={<FontAwesomeIcon icon={faMedal} />}
-          onClick={() => setShowVictory(true)}
-          variant="outlined"
-        >
-          Show victory
-        </Button>
-      );
-    }
-    if (surrender) {
-      return (
-        <Button
-          variant="outlined"
-          onClick={handleNewGame}
-          startIcon={<FontAwesomeIcon icon={faCirclePlay} />}
-        >
-          New Game
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        disabled={solved}
-        startIcon={<FontAwesomeIcon icon={faDoorClosed} />}
-        onClick={onGiveUp}
-        variant="outlined"
-      >
-        Give up
-      </Button>
-    );
   };
 
   return (
@@ -85,9 +50,9 @@ export default function UserHud({
       sx={{
         position: 'fixed',
         top: 5,
-        left: 'max(5%, 50px)',
-        right: 'max(5%, 50px)',
-        padding: 2,
+        left: isSmall ? 3 : 'max(5%, 50px)',
+        right: isSmall ? 3 : 'max(5%, 50px)',
+        padding: isSmall ? 1 : 2,
       }}
     >
       <Stack direction="row" gap={2} alignItems="center">
@@ -110,15 +75,25 @@ export default function UserHud({
             <FontAwesomeIcon icon={faFlag} size="2x" />
           </Badge>
         </Tooltip>
-        {actionButton()}
-        <Stack>
-          {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
-          {guess && (
-            <Typography>
-              {solved ? `${surrender ? '' : 'Found it! '}It was ${target?.name ?? ''} of ${target?.country ?? 'no country'}` : `Most Recent guess: ${guess.name}`}
-            </Typography>
-          )}
-        </Stack>
+        <ActionButton
+          isSmall={isSmall}
+          solved={solved}
+          surrender={surrender}
+          showVictory={showVictory}
+          onShowVictory={() => setShowVictory(true)}
+          onGiveUp={onGiveUp}
+          onNewGame={handleNewGame}
+        />
+        {!isSmall && (
+          <Stack>
+            {target && !solved && foundCountry && <Typography>{`The city is in ${target?.country}`}</Typography>}
+            {guess && (
+              <Typography>
+                {solved ? `${surrender ? '' : 'Found it! '}It was ${target?.name ?? ''} of ${target?.country ?? 'no country'}` : `Most Recent guess: ${guess.name}`}
+              </Typography>
+            )}
+          </Stack>
+        )}
       </Stack>
       <Victory
         playingChallenge={playingChallenge}

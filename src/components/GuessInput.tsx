@@ -34,6 +34,13 @@ export default function GuessInput({
       options={options}
       clearOnBlur
       clearOnEscape
+      componentsProps={{
+        popper: {
+          sx: {
+            minWidth: 'min(95%, 400px)',
+          },
+        },
+      }}
       getOptionDisabled={
         (option: GuessOption) => guesses.some((g) => isSame(option, g))
           || assists.some((ass) => isSame(option, ass))
