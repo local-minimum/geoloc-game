@@ -223,6 +223,7 @@ export default function GameMap({
         center: [0, 0],
         zoom: 1,
         projection,
+        maxZoom: 13,
       }),
     });
     citiesSource.current = citiesVectorSource;
