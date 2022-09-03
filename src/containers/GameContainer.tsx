@@ -9,6 +9,7 @@ import {
   asCity, asCountry, City, Country, GuessOption, isCity, isCountry, isSame,
 } from '../hooks/types';
 import { useGuessOptions } from '../hooks/useGuessOptions';
+import { getExtract } from '../utils/wiki';
 
 const MAP_PROJ = 'EPSG:3857'; // 'EPSG:4326';
 
@@ -43,6 +44,7 @@ export default function GameContainer(): JSX.Element | null {
     if (isSame(guess, liveTarget)) {
       setSolvedIt(true);
       enqueueSnackbar('Congratulations!', { variant: 'success' });
+      getExtract(guess.name, console.log);
     }
     if (isCountry(guess) && liveTarget?.country === guess.name) {
       setFoundCountry(true);
